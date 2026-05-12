@@ -1,0 +1,45 @@
+/*
+  Localizable.strings
+  BatcaveStarter
+
+  Created by Aykhan Safarli on 16.04.26.
+*/
+
+// MARK: - Common
+
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.done" = "Done";
+"common.save" = "Save";
+"common.delete" = "Delete";
+"common.edit" = "Edit";
+"common.close" = "Close";
+"common.back" = "Back";
+"common.next" = "Next";
+"common.continue" = "Continue";
+"common.retry" = "Retry";
+"common.loading" = "Loading...";
+"common.error" = "Error";
+"common.success" = "Success";
+"common.search" = "Search";
+"common.yes" = "Yes";
+"common.no" = "No";
+
+// MARK: - Launch
+
+"launch.title" = "BatcaveStarter";
+"launch.open_example" = "Open Example";
+"launch.onboarding" = "Onboarding";
+
+// MARK: - Example
+
+"example.title" = "Example";
+"example.empty" = "No items yet";
+"example.retry" = "Retry";
+
+// MARK: - Errors
+
+"error.network" = "Something went wrong. Please check your connection and try again.";
+"error.unauthorized" = "Your session has expired. Please sign in again.";
+"error.server" = "A server error occurred. Please try again later.";
+"error.unknown" = "An unknown error occurred.";

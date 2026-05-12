@@ -1,0 +1,95 @@
+//
+//  <<FLOW_NAME>>DemoRecorder.swift
+//  <<UITESTS_TARGET>>
+//
+//  End-to-end walkthrough of the <<FLOW_NAME>> flow used to capture a
+//  demo video. Intentionally paced with small sleeps between screens so
+//  a viewer watching the recording has time to see each step.
+//
+//  Run via scripts/record-demo.sh — that wraps this test in a
+//  `simctl io recordVideo` so the springboard + app launch + full flow
+//  end up in a single .mov saved to ~/Documents/.
+//
+
+import XCTest
+
+final class <<FLOW_NAME>>DemoRecorder: XCTestCase {
+
+    // MARK: - Mock data
+    //
+    // Hard-coded so anyone reading the test sees exactly what ran. Edit
+    // these to change the persona used in the recording.
+
+    // <<MOCK_DATA>>
+    // Example:
+    //   private let fullName = "Aykhan Safarli"
+    //   private let email = "aykhan@example.com"
+    //   private let password = "Demo#2026"
+
+    // MARK: - Tunables
+
+    /// Pause between major screens so viewers can actually read things.
+    private let screenPause: UInt32 = 1
+
+    /// Slightly longer beat when waiting on an animation / typing
+    /// indicator / phased reveal.
+    private let animationPause: UInt32 = 2
+
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = false
+    }
+
+    // MARK: - Test
+
+    func testRecordFull<<FLOW_NAME>>Walkthrough() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // Call one walkX per screen in the flow. Keep them small and
+        // named after the screen.
+        //
+        // walkWelcome(app)
+        // walkRegister(app)
+        // walkIntake(app)
+        // walkYouAreIn(app)
+    }
+
+    // MARK: - Helpers
+
+    /// Tap a Button by its visible title.
+    private func tapButton(_ app: XCUIApplication, label: String) {
+        let btn = app.buttons[label]
+        XCTAssertTrue(btn.waitForExistence(timeout: 5), "Button: \(label)")
+        btn.tap()
+    }
+
+    /// Tap a chip-style button whose label contains the given fragment
+    /// (useful when the label is "<emoji> <text>").
+    private func tapChip(_ app: XCUIApplication, containing fragment: String) {
+        sleep(animationPause)
+        let predicate = NSPredicate(format: "label CONTAINS[c] %@", fragment)
+        let button = app.buttons.matching(predicate).firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: 10), "Chip containing \(fragment)")
+        button.tap()
+    }
+
+    /// Type text into the first visible text field.
+    private func typeIntoFirstField(_ app: XCUIApplication, _ text: String) {
+        sleep(screenPause)
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "Text field")
+        if !field.isHittable { field.tap() }
+        field.tap()
+        field.typeText(text)
+    }
+
+    /// Type into the first secure text field (password / PIN).
+    private func typeIntoFirstSecureField(_ app: XCUIApplication, _ text: String) {
+        sleep(screenPause)
+        let field = app.secureTextFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "Secure text field")
+        field.tap()
+        field.typeText(text)
+    }
+}

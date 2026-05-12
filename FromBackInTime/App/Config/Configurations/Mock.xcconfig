@@ -1,0 +1,10 @@
+//
+//  Mock.xcconfig
+//  FromBackInTime
+//
+//  Created by Aykhan Safarli on 16.04.26.
+//
+//  Builds against the in-memory MockNetworkClient.
+//  The BASE_HOST here is never hit — mock responses are generated locally.
+
+BASE_HOST = mock.local
