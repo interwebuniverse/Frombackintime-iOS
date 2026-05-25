@@ -27,7 +27,7 @@
 
 // MARK: - Launch
 
-"launch.title" = "BatcaveStarter";
+"launch.title" = "FromBackInTime";
 "launch.open_example" = "Open Example";
 "launch.onboarding" = "Onboarding";
 

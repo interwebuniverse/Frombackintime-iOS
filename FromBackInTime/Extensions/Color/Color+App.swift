@@ -62,11 +62,12 @@ extension UIColor {
     static let appPrimary = dynamic(light: neutral900, dark: neutral50)
     static let appSecondary = dynamic(light: neutral500, dark: neutral400)
 
-    static let appBackground = dynamic(light: .white, dark: neutral950)
-    static let appSurface = dynamic(light: .white, dark: neutral900)
-    static let appCardBackground = dynamic(light: .white, dark: neutral800)
-    static let appInputBackground = dynamic(light: neutral100, dark: neutral800)
-    static let appGroupedBackground = dynamic(light: neutral100, dark: neutral950)
+    // Warm cream surfaces (light-only app). Swap these to rebrand.
+    static let appBackground = dynamic(light: UIColor(hex: 0xF4EEE1), dark: neutral950)
+    static let appSurface = dynamic(light: UIColor(hex: 0xFBF8F1), dark: neutral900)
+    static let appCardBackground = dynamic(light: UIColor(hex: 0xFBF8F1), dark: neutral800)
+    static let appInputBackground = dynamic(light: UIColor(hex: 0xEAE1CF), dark: neutral800)
+    static let appGroupedBackground = dynamic(light: UIColor(hex: 0xEAE1CF), dark: neutral950)
 
     static let appPlaceholder = dynamic(light: neutral400, dark: neutral600)
     static let appDisabledBackground = dynamic(light: neutral100, dark: neutral800.withAlphaComponent(0.4))
@@ -75,8 +76,9 @@ extension UIColor {
     static let appBorder = dynamic(light: neutral200, dark: neutral700)
     static let appDivider = dynamic(light: neutral100, dark: neutral800)
 
-    static let appAccent = dynamic(light: brand500, dark: brand400)
-    static let appAccentBackground = dynamic(light: brand50, dark: neutral800)
+    // Natural warm clay accent (replaces the blue) for text/secondary actions.
+    static let appAccent = dynamic(light: UIColor(hex: 0xB5654D), dark: UIColor(hex: 0xC98060))
+    static let appAccentBackground = dynamic(light: UIColor(hex: 0xF0E3D8), dark: neutral800)
 
     static let appPrimaryButtonBackground = dynamic(light: neutral900, dark: neutral50)
     static let appPrimaryButtonForeground = dynamic(light: .white, dark: neutral900)

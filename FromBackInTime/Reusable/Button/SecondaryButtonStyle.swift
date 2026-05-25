@@ -15,8 +15,8 @@ struct SecondaryButtonStyle: ButtonStyle {
 
     private let iconSize: CGFloat = 20
     private let iconGap: CGFloat = AppSpacing.sm
-    private let cornerRadius: CGFloat = AppRadius.md
-    private let height: CGFloat = 52
+    private let cornerRadius: CGFloat = AppRadius.full
+    private let height: CGFloat = 56
 
     init(leftIcon: Image? = nil, rightIcon: Image? = nil) {
         self.leftIcon = leftIcon

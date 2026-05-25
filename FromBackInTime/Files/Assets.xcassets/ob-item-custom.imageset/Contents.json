@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "ob-item-custom.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

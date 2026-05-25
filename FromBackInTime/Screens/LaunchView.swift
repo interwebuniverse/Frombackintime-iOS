@@ -33,7 +33,7 @@ struct LaunchView: View {
                 .primaryButton()
 
                 Button(L10n.launchOnboarding.localized) {
-                    router.navigate(.onboarding)
+                    router.presentFullScreen(.onboarding)
                 }
                 .secondaryButton()
             }

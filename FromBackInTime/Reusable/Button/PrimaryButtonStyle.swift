@@ -16,8 +16,8 @@ struct PrimaryButtonStyle: ButtonStyle {
 
     private let iconSize: CGFloat = 20
     private let iconGap: CGFloat = AppSpacing.sm
-    private let cornerRadius: CGFloat = AppRadius.md
-    private let height: CGFloat = 52
+    private let cornerRadius: CGFloat = AppRadius.full
+    private let height: CGFloat = 58
 
     init(leftIcon: Image? = nil, rightIcon: Image? = nil, isLoading: Bool = false) {
         self.leftIcon = leftIcon
@@ -47,7 +47,8 @@ struct PrimaryButtonStyle: ButtonStyle {
                     .tint(Color.appPrimaryButtonForeground)
             }
         }
-        .appFont(.heading5)
+        .appFont(.heading4)
+        .fontWeight(.bold)
         .foregroundStyle(Color.appPrimaryButtonForeground)
         .padding(.horizontal, AppSpacing.xl)
         .frame(maxWidth: .infinity)
@@ -56,6 +57,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             Color.appPrimaryButtonBackground,
             in: .rect(cornerRadius: cornerRadius)
         )
+        .shadow(color: Color.appPrimaryButtonBackground.opacity(isEnabled ? 0.28 : 0), radius: 16, y: 8)
         .opacity(isEnabled || isLoading ? 1 : 0.45)
         .scaleEffect(configuration.isPressed && !isLoading ? 0.97 : 1)
         .animation(.snappy(duration: 0.2), value: configuration.isPressed)

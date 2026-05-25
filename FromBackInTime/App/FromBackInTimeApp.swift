@@ -26,20 +26,18 @@ struct FromBackInTimeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack(path: $router.paths) {
-                LaunchView()
-                    .withAppRouter()
-            }
-            .sheet(item: $router.sheet) { destination in
-                RouterDestinationView(destination: destination)
-            }
-            .fullScreenCover(item: $router.fullScreenSheet) { destination in
-                RouterDestinationView(destination: destination)
-            }
-            .environment(router)
-            .environment(container)
+            OnboardingView()        // boot straight into onboarding (its own NavigationStack)
+                .sheet(item: $router.sheet) { destination in
+                    RouterDestinationView(destination: destination)
+                }
+                .fullScreenCover(item: $router.fullScreenSheet) { destination in
+                    RouterDestinationView(destination: destination)
+                }
+                .environment(router)
+                .environment(container)
             // .environment(authStore)    // global stores injected here
             // .environment(cardStore)
+            .preferredColorScheme(.light)   // app is light-only by design
         }
     }
 }

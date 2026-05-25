@@ -12,7 +12,7 @@ extension Font {
         if let name = typography.customFontName {
             return .custom(name, size: typography.size)
         }
-        return .system(size: typography.size, weight: typography.weight.swiftUIWeight)
+        return .system(size: typography.size, weight: typography.weight.swiftUIWeight, design: .rounded)
     }
 }
 

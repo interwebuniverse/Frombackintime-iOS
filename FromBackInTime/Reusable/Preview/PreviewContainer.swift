@@ -24,5 +24,6 @@ struct PreviewContainer<Content: View>: View {
         }
         .environment(router)
         .environment(container)
+        .preferredColorScheme(.light)
     }
 }
