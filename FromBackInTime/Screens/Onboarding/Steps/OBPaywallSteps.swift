@@ -11,6 +11,7 @@ import SwiftUI
 
 struct OBFirstActionView: View {
     @Environment(Router.self) private var router
+    @Environment(AppState.self) private var appState
     @Environment(OnboardingState.self) private var state
 
     private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
@@ -63,5 +64,6 @@ struct OBFirstActionView: View {
     private func finish() {
         router.fullScreenSheet = nil
         router.popToRoot()
+        appState.completeOnboarding()
     }
 }

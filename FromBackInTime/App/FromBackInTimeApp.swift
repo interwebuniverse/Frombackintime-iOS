@@ -11,6 +11,8 @@ import SwiftUI
 struct FromBackInTimeApp: App {
     @State private var router = Router.base
     @State private var container = DependencyContainer()
+    @State private var appState = AppState()
+    @State private var mockStore = MockAppStore()
 
     // MARK: - Global stores (long-lived, shared across screens)
 
@@ -26,7 +28,7 @@ struct FromBackInTimeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            OnboardingView()        // boot straight into onboarding (its own NavigationStack)
+            RootView()              // onboarding until finished, then the main tab bar
                 .sheet(item: $router.sheet) { destination in
                     RouterDestinationView(destination: destination)
                 }
@@ -35,6 +37,8 @@ struct FromBackInTimeApp: App {
                 }
                 .environment(router)
                 .environment(container)
+                .environment(appState)
+                .environment(mockStore)
             // .environment(authStore)    // global stores injected here
             // .environment(cardStore)
             .preferredColorScheme(.light)   // app is light-only by design

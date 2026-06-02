@@ -1,0 +1,91 @@
+//
+//  MessageRow.swift
+//  FromBackInTime
+//
+//  One row in any message list (Home upcoming, Library, Icon page). Tappable
+//  to open a placeholder message detail.
+//
+
+import SwiftUI
+
+struct MessageRow: View {
+    @Environment(MockAppStore.self) private var store
+    let message: Message
+
+    private var recipient: Recipient? { store.recipient(id: message.recipientID) }
+
+    var body: some View {
+        AppCard(padding: AppSpacing.lg) {
+            HStack(spacing: AppSpacing.lg) {
+                if let recipient {
+                    RecipientAvatar(recipient: recipient, size: 48)
+                } else {
+                    Circle().fill(AppShellTheme.subtitle.opacity(0.2)).frame(width: 48, height: 48)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: AppSpacing.xs) {
+                        Text(recipient?.name ?? "Unknown")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppShellTheme.title)
+                        mediumBadge
+                        if message.kind == .ctm {
+                            ctmBadge
+                        }
+                    }
+                    Text(message.occasion)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(AppShellTheme.subtitle)
+                    Text(dateLabel)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppShellTheme.accent)
+                        .padding(.top, 2)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: openIcon)
+                    .font(.system(size: 26))
+                    .foregroundStyle(AppShellTheme.accent.opacity(0.85))
+            }
+        }
+    }
+
+    private var ctmBadge: some View {
+        Text(message.ctmActivated ? "Activated" : "CTM")
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                Capsule().fill(message.ctmActivated ? AppShellTheme.accent : AppShellTheme.gold)
+            )
+    }
+
+    private var mediumBadge: some View {
+        let tint = Color(hue: message.medium.hue, saturation: 0.55, brightness: 0.7)
+        return HStack(spacing: 3) {
+            Image(systemName: message.medium.icon)
+                .font(.system(size: 9, weight: .bold))
+            Text(message.medium.shortLabel)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Capsule().fill(tint.opacity(0.14)))
+    }
+
+    private var openIcon: String {
+        switch message.medium {
+        case .video: return "play.circle.fill"
+        case .voice: return "play.circle.fill"
+        case .photo: return "photo.fill"
+        case .text:  return "text.alignleft"
+        }
+    }
+
+    private var dateLabel: String {
+        if let d = message.deliveryDate {
+            return "Delivers \(DateFormatter.prettyDate.string(from: d))"
+        }
+        return message.kind == .ctm ? "Awaiting activation" : "Date TBD"
+    }
+}
