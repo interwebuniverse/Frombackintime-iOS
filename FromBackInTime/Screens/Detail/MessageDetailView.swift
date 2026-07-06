@@ -228,9 +228,7 @@ struct MessageDetailView: View {
             if message.kind == .ctm {
                 Button {
                     Haptics.feedback(style: .medium)
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
-                        store.toggleCTMActivation(id: message.id)
-                    }
+                    Task { await store.toggleCTMActivation(id: message.id) }
                 } label: {
                     Text(message.ctmActivated ? "Deactivate CTM" : "Activate CTM")
                         .font(.system(size: 16, weight: .bold, design: .rounded))
@@ -247,8 +245,10 @@ struct MessageDetailView: View {
 
             Button(role: .destructive) {
                 Haptics.notification(type: .warning)
-                store.deleteMessage(id: message.id)
-                dismiss()
+                Task {
+                    await store.deleteMessage(id: message.id)
+                    dismiss()
+                }
             } label: {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "trash")
@@ -265,6 +265,18 @@ struct MessageDetailView: View {
             }
             .buttonStyle(.pressableCard)
         }
+        .alert("Share this access code", isPresented: accessCodeBinding) {
+            Button("Done", role: .cancel) { store.lastAccessCode = nil }
+        } message: {
+            Text("Give this one-time code to \(recipient?.name ?? "your recipient"): \(store.lastAccessCode ?? ""). It unlocks the message when it arrives and is shown only once.")
+        }
+    }
+
+    private var accessCodeBinding: Binding<Bool> {
+        Binding(
+            get: { store.lastAccessCode != nil },
+            set: { if !$0 { store.lastAccessCode = nil } }
+        )
     }
 
     // MARK: - Play button (video/voice)

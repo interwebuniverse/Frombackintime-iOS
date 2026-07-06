@@ -2,6 +2,29 @@
 
 iOS app for time-released video messages and the Critical Timed Message ("dead man's switch") flow.
 
+## Backend binding status (0→1)
+
+The app is bound to the FromBackInTime backend. `MockAppStore` is now backed by
+real repositories in the live scheme and still runs seeded/in-memory in the Mock
+scheme.
+
+- **Auth**: Supabase anonymous sign-in on launch (`AuthStore.ensureSession`),
+  token in Keychain, injected as Bearer on every call. Apple/Google sign-in is
+  stubbed (`AuthStore.signInWithApple`) for the next pass.
+- **Wired to backend**: recipients (list/create with email), messages
+  (list/create/finalize/delete), CTM (arm + one-time access code, check-in,
+  snooze), profile (delete account, sign out).
+- **All media is real capture now**: text (create→finalize→scheduled), photo
+  (`PhotosPicker` → JPEG), voice (`AVAudioRecorder` → m4a), video (camera via
+  `MoviePicker` → mp4). Each uploads to R2 through the presigned-PUT flow, then
+  finalizes. Info.plist carries the mic + camera usage strings.
+- **Config**: `SupabaseConfig` holds the project URL + publishable key.
+  `BASE_HOST` = `api.frombackintime.app` (update to the live domain once DNS is up).
+- **Remaining (infra/verification, not code)**: enable "Anonymous sign-ins" in
+  the Supabase dashboard; point `BASE_HOST` at the live TLS domain; run a live
+  end-to-end smoke test once the backend is deployed + reachable. Apple/Google
+  sign-in is stubbed (`AuthStore.signInWithApple`) for the next pass.
+
 ## Architecture
 
 ```

@@ -22,6 +22,7 @@ struct VoiceRecordView: View {
     @State private var elapsed: Int = 0
     @State private var phase: CGFloat = 0
     @State private var ticker: Timer?
+    @State private var recorder = AudioRecorder()
 
     enum RecState { case idle, recording, recorded }
 
@@ -204,6 +205,7 @@ struct VoiceRecordView: View {
             Haptics.feedback(style: .medium)
             state = .recording
             elapsed = 0
+            Task { await recorder.start() }
             ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
                 Task { @MainActor in elapsed += 1 }
             }
@@ -211,6 +213,7 @@ struct VoiceRecordView: View {
             Haptics.feedback(style: .light)
             state = .recorded
             ticker?.invalidate()
+            recorder.stop()
         case .recorded:
             break
         }
@@ -226,7 +229,10 @@ struct VoiceRecordView: View {
             deliveryDate: deliveryDate,
             durationSeconds: max(elapsed, 1)
         )
-        store.saveMessage(msg)
-        dismiss()
+        let data = recorder.data()
+        Task {
+            await store.saveMessage(msg, mediaData: data)
+            dismiss()
+        }
     }
 }

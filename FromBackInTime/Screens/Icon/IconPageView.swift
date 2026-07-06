@@ -188,9 +188,7 @@ struct CTMRow: View {
                 }
                 Button {
                     Haptics.feedback(style: .medium)
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.65)) {
-                        store.toggleCTMActivation(id: message.id)
-                    }
+                    Task { await store.toggleCTMActivation(id: message.id) }
                 } label: {
                     Text(message.ctmActivated ? "Deactivate" : "Activate CTM")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))

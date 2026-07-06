@@ -15,8 +15,12 @@ import KeychainSwift
     var wrappedValue: String? {
         get { keychain.get(key.rawValue) }
         set {
-            guard let newValue else { return }
-            keychain.set(newValue, forKey: key.rawValue)
+            if let newValue {
+                keychain.set(newValue, forKey: key.rawValue)
+            } else {
+                // Setting nil clears the entry - needed for sign-out.
+                keychain.delete(key.rawValue)
+            }
         }
     }
 }

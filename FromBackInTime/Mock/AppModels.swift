@@ -2,9 +2,9 @@
 //  AppModels.swift
 //  FromBackInTime
 //
-//  UI-side domain models used across the main app. These are plain structs
-//  (no DTOs yet) since the live backend isn't wired. When repositories land,
-//  these are what stores will map to.
+//  UI-side domain models used across the main app. Ids are backend strings
+//  (e.g. "rcp_..." / "msg_..."). DTO mapping initializers live at the bottom so
+//  stores can turn repository responses straight into these.
 //
 
 import SwiftUI
@@ -67,21 +67,35 @@ enum MessageMedium: String, Codable, Hashable, CaseIterable, Identifiable {
         case .text:  return 0.36   // sage green
         }
     }
+
+    var needsMedia: Bool { self != .text }
+
+    /// MIME type for the presigned R2 upload. Must be one the backend allows.
+    var uploadContentType: String {
+        switch self {
+        case .video: return "video/mp4"
+        case .voice: return "audio/m4a"
+        case .photo: return "image/jpeg"
+        case .text:  return ""
+        }
+    }
 }
 
 struct Recipient: Identifiable, Hashable {
-    let id: UUID
+    let id: String
     var name: String
     var relationship: String
+    var email: String
     var initials: String
     /// Hue used to pick the avatar tint. Keeps colours stable across launches.
     var hue: Double
 
-    init(id: UUID = UUID(), name: String, relationship: String, hue: Double) {
+    init(id: String = "", name: String, relationship: String, email: String = "", hue: Double, initials: String? = nil) {
         self.id = id
         self.name = name
         self.relationship = relationship
-        self.initials = Self.initials(from: name)
+        self.email = email
+        self.initials = initials ?? Self.initials(from: name)
         self.hue = hue
     }
 
@@ -97,8 +111,8 @@ struct Recipient: Identifiable, Hashable {
 }
 
 struct Message: Identifiable, Hashable {
-    let id: UUID
-    var recipientID: UUID
+    let id: String
+    var recipientID: String
     var kind: MessageKind
     var medium: MessageMedium
     var occasion: String
@@ -110,12 +124,12 @@ struct Message: Identifiable, Hashable {
     var durationSeconds: Int
     /// For text/photo+note media: the body of the note. Empty for video/voice.
     var bodyText: String
-    /// CTM only: whether the recipient has activated the dead-man's switch.
+    /// CTM only: whether the switch is armed on the backend.
     var ctmActivated: Bool
 
     init(
-        id: UUID = UUID(),
-        recipientID: UUID,
+        id: String = "",
+        recipientID: String,
         kind: MessageKind,
         medium: MessageMedium = .video,
         occasion: String,
@@ -137,11 +151,69 @@ struct Message: Identifiable, Hashable {
         self.ctmActivated = ctmActivated
     }
 
-    /// Human "Mom_Birthday_2027-05-14" style title used in lists.
+    /// Human "Mom · Birthday · 2027-05-14" style title used in lists.
     func fileLabel(in recipients: [Recipient]) -> String {
         let name = recipients.first(where: { $0.id == recipientID })?.name ?? "Unknown"
         let date = deliveryDate.map { DateFormatter.fileDate.string(from: $0) } ?? "TBD"
         return "\(name) · \(occasion) · \(date)"
+    }
+}
+
+// MARK: - DTO mapping
+
+extension Recipient {
+    init(dto: RecipientResponses.Recipient) {
+        self.init(
+            id: dto.id ?? "",
+            name: dto.name ?? "",
+            relationship: dto.relationship ?? "",
+            email: dto.email ?? "",
+            hue: dto.hue ?? 0.5,
+            initials: dto.initials
+        )
+    }
+}
+
+extension Message {
+    init(dto: MessageResponses.Message) {
+        self.init(
+            id: dto.id ?? "",
+            recipientID: dto.recipientId ?? "",
+            kind: MessageKind(rawValue: dto.kind ?? "standard") ?? .standard,
+            medium: MessageMedium(rawValue: dto.medium ?? "text") ?? .text,
+            occasion: dto.occasion ?? "",
+            deliveryDate: APIDate.parse(dto.deliverAt),
+            recordedAt: APIDate.parse(dto.createdAt) ?? .now,
+            durationSeconds: dto.durationSeconds ?? 0,
+            bodyText: dto.bodyText ?? "",
+            // "armed" is the switch-set state; a released CTM moves to scheduled.
+            ctmActivated: (dto.status == "armed" || dto.status == "scheduled")
+        )
+    }
+}
+
+// MARK: - Dates
+
+/// ISO-8601 helpers for the backend contract (timestamps are ISO strings).
+enum APIDate {
+    private static let withFraction: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    private static let plain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    static func parse(_ s: String?) -> Date? {
+        guard let s, !s.isEmpty else { return nil }
+        return withFraction.date(from: s) ?? plain.date(from: s)
+    }
+
+    static func string(_ date: Date) -> String {
+        withFraction.string(from: date)
     }
 }
 

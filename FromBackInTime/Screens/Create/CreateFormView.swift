@@ -16,7 +16,7 @@ struct CreateFormView: View {
     let medium: MessageMedium
     let prefilledRecipient: Recipient?
 
-    @State private var selectedRecipientID: UUID?
+    @State private var selectedRecipientID: String?
     @State private var occasion: String = ""
     @State private var deliveryDate: Date = Calendar.current.date(byAdding: .month, value: 6, to: .now) ?? .now
     @State private var goToComposer: Bool = false

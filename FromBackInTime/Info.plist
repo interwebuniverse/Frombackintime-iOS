@@ -4,6 +4,10 @@
 <dict>
 	<key>BASE_HOST</key>
 	<string>$(BASE_HOST)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>FromBackInTime needs the microphone to record your voice messages.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FromBackInTime needs the camera to record your video messages.</string>
 	<key>UIAppFonts</key>
 	<array/>
 </dict>

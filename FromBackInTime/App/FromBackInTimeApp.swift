@@ -10,21 +10,19 @@ import SwiftUI
 @main
 struct FromBackInTimeApp: App {
     @State private var router = Router.base
-    @State private var container = DependencyContainer()
+    @State private var container: DependencyContainer
     @State private var appState = AppState()
-    @State private var mockStore = MockAppStore()
 
-    // MARK: - Global stores (long-lived, shared across screens)
+    // Global stores (long-lived, shared across screens).
+    @State private var authStore: AuthStore
+    @State private var appStore: MockAppStore
 
-    // @State private var authStore: AuthStore
-    // @State private var cardStore: CardStore
-
-    // init() {
-    //     let container = DependencyContainer()
-    //     _container = State(wrappedValue: container)
-    //     _authStore = State(wrappedValue: container.makeAuthStore())
-    //     _cardStore = State(wrappedValue: container.makeCardStore())
-    // }
+    init() {
+        let container = DependencyContainer()
+        _container = State(wrappedValue: container)
+        _authStore = State(wrappedValue: container.makeAuthStore())
+        _appStore = State(wrappedValue: container.makeAppStore())
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -38,10 +36,15 @@ struct FromBackInTimeApp: App {
                 .environment(router)
                 .environment(container)
                 .environment(appState)
-                .environment(mockStore)
-            // .environment(authStore)    // global stores injected here
-            // .environment(cardStore)
-            .preferredColorScheme(.light)   // app is light-only by design
+                .environment(authStore)
+                .environment(appStore)
+                .preferredColorScheme(.light)   // app is light-only by design
+                .task {
+                    // Onboarding-first: establish an anonymous session so every
+                    // authed call has a token, then load the user's data.
+                    await authStore.ensureSession()
+                    await appStore.bootstrap()
+                }
         }
     }
 }

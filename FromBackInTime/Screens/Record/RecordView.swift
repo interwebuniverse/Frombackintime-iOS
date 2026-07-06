@@ -22,6 +22,8 @@ struct RecordView: View {
     @State private var state: RecState = .idle
     @State private var elapsed: Int = 0
     @State private var ticker: Timer?
+    @State private var showCamera = false
+    @State private var videoData: Data?
 
     enum RecState { case idle, recording, recorded }
 
@@ -42,6 +44,16 @@ struct RecordView: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarHidden(true)
         .onDisappear { ticker?.invalidate() }
+        .fullScreenCover(isPresented: $showCamera) {
+            MoviePicker { data, duration in
+                if let data {
+                    videoData = data
+                    elapsed = duration
+                    state = .recorded
+                }
+            }
+            .ignoresSafeArea()
+        }
     }
 
     private var background: some View {
@@ -172,11 +184,7 @@ struct RecordView: View {
         switch state {
         case .idle:
             Haptics.feedback(style: .medium)
-            state = .recording
-            elapsed = 0
-            ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                Task { @MainActor in elapsed += 1 }
-            }
+            showCamera = true
         case .recording:
             Haptics.feedback(style: .light)
             state = .recorded
@@ -196,7 +204,10 @@ struct RecordView: View {
             deliveryDate: deliveryDate,
             durationSeconds: max(elapsed, 1)
         )
-        store.saveMessage(msg)
-        dismiss()
+        let data = videoData
+        Task {
+            await store.saveMessage(msg, mediaData: data)
+            dismiss()
+        }
     }
 }

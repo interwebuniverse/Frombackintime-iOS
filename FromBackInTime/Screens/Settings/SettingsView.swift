@@ -12,6 +12,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
     @Environment(MockAppStore.self) private var store
+    @Environment(AuthStore.self) private var authStore
+    @Environment(DependencyContainer.self) private var container
 
     @State private var showDeleteConfirm = false
 
@@ -47,6 +49,12 @@ struct SettingsView: View {
                 Section {
                     Button(role: .destructive) {
                         Haptics.selection()
+                        authStore.signOut()
+                        dismiss()
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 300_000_000)
+                            appState.resetOnboarding()
+                        }
                     } label: {
                         Text("Sign out")
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
@@ -78,11 +86,13 @@ struct SettingsView: View {
 
     private func performDelete() {
         Haptics.notification(type: .warning)
-        store.resetToSeed()
-        dismiss()
         // Defer so the sheet dismiss animation finishes before the root swaps
         // to onboarding; otherwise the swap happens behind the sheet.
         Task { @MainActor in
+            try? await container.meRepository.deleteAccount()
+            authStore.signOut()
+            store.resetToSeed()
+            dismiss()
             try? await Task.sleep(nanoseconds: 300_000_000)
             appState.resetOnboarding()
         }

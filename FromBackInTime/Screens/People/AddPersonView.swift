@@ -14,9 +14,11 @@ struct AddPersonView: View {
 
     @State private var name: String = ""
     @State private var relationship: String = ""
+    @State private var email: String = ""
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && email.contains("@") && email.contains(".")
     }
 
     var body: some View {
@@ -34,6 +36,10 @@ struct AddPersonView: View {
                         .textInputAutocapitalization(.words)
                     TextField("Relationship (e.g. Mother, Friend)", text: $relationship)
                         .textInputAutocapitalization(.words)
+                    TextField("Email (where the message is delivered)", text: $email)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
                 }
                 Section {
                     Text("This person will show up in your People list and as a target you can send messages to.")
@@ -51,11 +57,14 @@ struct AddPersonView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add") {
                         Haptics.feedback(style: .medium)
-                        store.addRecipient(
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            relationship: relationship.trimmingCharacters(in: .whitespaces)
-                        )
-                        dismiss()
+                        Task {
+                            await store.addRecipient(
+                                name: name.trimmingCharacters(in: .whitespaces),
+                                relationship: relationship.trimmingCharacters(in: .whitespaces),
+                                email: email.trimmingCharacters(in: .whitespaces)
+                            )
+                            dismiss()
+                        }
                     }
                     .disabled(!canSave)
                     .foregroundStyle(canSave ? AppShellTheme.accent : AppShellTheme.subtitle.opacity(0.4))

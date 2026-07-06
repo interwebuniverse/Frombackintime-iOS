@@ -111,7 +111,9 @@ struct TextComposeView: View {
             durationSeconds: 0,
             bodyText: trimmed
         )
-        store.saveMessage(msg)
-        dismiss()
+        Task {
+            await store.saveMessage(msg)
+            dismiss()
+        }
     }
 }
