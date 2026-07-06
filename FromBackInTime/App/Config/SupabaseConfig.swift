@@ -11,8 +11,8 @@
 import Foundation
 
 enum SupabaseConfig {
-    static let host = "jfnubrtuerbbehcteooo.supabase.co"
-    static let anonKey = "sb_publishable_c3IdEICkMkyzg-BhGnSjKA_3aN9hySe"
+    static let host = "ajnbgtdzmvpbyctejpjw.supabase.co"
+    static let anonKey = "sb_publishable_fp9nXizS9ppcTBITAKzXcw_VO_O_KnB"
 
     static var authBaseURL: String { "https://\(host)/auth/v1" }
 
