@@ -1,0 +1,20 @@
+# People tab: verify the grid, then open a person's Icon Page and check its
+# actions. (Search is covered by the Library flow; searching here then tapping
+# the same name is ambiguous with the search field's own text.)
+appId: com.frombackintime.app
+tags: [read]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn:
+    point: "50%,94%"          # People tab (avoids the Home "People" stat tile)
+- assertVisible: "Search people"
+- assertVisible: "Dad"
+- assertVisible: "Liam"
+
+# Open a person's Icon Page (its action buttons sit at the top).
+- tapOn: "Liam"
+- assertVisible: "New message"
+- assertVisible: "New CTM"

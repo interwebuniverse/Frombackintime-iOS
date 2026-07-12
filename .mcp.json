@@ -6,6 +6,10 @@
       "headers": {
         "Authorization": "Bearer ${FAL_KEY}"
       }
+    },
+    "xcodebuildmcp": {
+      "command": "npx",
+      "args": ["-y", "xcodebuildmcp@2.6.2"]
     }
   }
 }

@@ -47,6 +47,7 @@ struct CreateView: View {
                         .foregroundStyle(AppShellTheme.accent)
                 }
             }
+            .a11y("create.screen")
         }
     }
 
@@ -148,6 +149,7 @@ struct MediumCard: View {
                 .strokeBorder(tint.opacity(0.18), lineWidth: 1)
         )
         .shadow(color: tint.opacity(0.15), radius: 14, y: 6)
+        .a11y("create.medium")
     }
 
     private var iconBlob: some View {

@@ -77,6 +77,7 @@ struct TextComposeView: View {
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.sm)
+                .a11y("text.field")
             if body_.isEmpty {
                 Text("Dear \(recipient.name),\n\nWhen you read this…")
                     .font(.system(size: 17, weight: .medium, design: .rounded))

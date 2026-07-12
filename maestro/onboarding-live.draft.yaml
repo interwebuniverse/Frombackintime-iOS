@@ -1,0 +1,110 @@
+# DRAFT - not part of the default Mock suite. Onboarding cannot run under the
+# Mock scheme: the Mock user is signed in, and the app auto-completes onboarding
+# for any signed-in non-anonymous session (FromBackInTimeApp .task). A fresh
+# anonymous user DOES see onboarding, so run this against the LIVE scheme with a
+# cleared state:
+#
+#   maestro --device <udid> test maestro/onboarding-live.draft.yaml
+#
+# The step sequence below is written but UNVERIFIED end-to-end (several buttons
+# are gated by typewriter/count-up/loader animations and may need wait tuning).
+# Treat it as a starting point.
+appId: com.frombackintime.app
+tags: [onboarding]
+---
+- launchApp:
+    clearState: true          # fresh anonymous user -> onboarding shows (live scheme)
+- waitForAnimationToEnd       # the hook screen fades in over ~1s
+
+# 1. Hook open
+- assertVisible: "Begin"
+- tapOn: "Begin"
+
+# 2. Hook question (types out; Continue enables when typing finishes)
+- extendedWaitUntil:
+    visible:
+      text: ".*chance again.*"
+    timeout: 8000
+- waitForAnimationToEnd
+- tapOn: "Continue"
+
+# 3. Name
+- assertVisible: "Your name"
+- tapOn: "Your name"
+- inputText: "Aykhan"
+- pressKey: Enter
+- tapOn: "Continue"
+
+# 4. Quiz block one (two questions on one animated screen)
+- assertVisible: "Who is on your mind right now?"
+- tapOn:
+    text: "My future self.*"
+- tapOn: "Next"
+- assertVisible: "What made you open this today?"
+- tapOn:
+    text: "Something has been left unsaid.*"
+- tapOn: "Continue"
+
+# 5. Empathy
+- tapOn: "Continue"
+
+# 6. Quiz block two
+- tapOn:
+    text: "I freeze when I try.*"
+- tapOn: "Next"
+- tapOn:
+    text: "My children.*"
+- tapOn: "Continue"
+
+# 7. Pain stat (count-up animates)
+- waitForAnimationToEnd
+- tapOn: "Continue"
+
+# 8. Thesis (button revealed after a beat)
+- extendedWaitUntil:
+    visible: "Show me how"
+    timeout: 8000
+- tapOn: "Show me how"
+
+# 9. Feature showcase pager (3x Next, then Continue)
+- tapOn: "Next"
+- tapOn: "Next"
+- tapOn: "Next"
+- tapOn: "Continue"
+
+# 10. CTM intro (button gated by a short animation)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 8000
+- tapOn: "Continue"
+
+# 11. Social proof
+- tapOn: "Continue"
+
+# 12. Preferences
+- assertVisible: "How would you like this to feel?"
+- tapOn: "Continue"
+
+# 13. Loader (I'm ready enables when the progress completes)
+- extendedWaitUntil:
+    visible: "I'm ready"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 8000
+- tapOn: "I'm ready"
+
+# 14. Plan reveal
+- assertVisible: "Start sending forward"
+- tapOn: "Start sending forward"
+
+# 15. Auth gate (skip to stay anonymous; avoids the system Apple sheet)
+- assertVisible: "Skip for now"
+- tapOn: "Skip for now"
+
+# 16. First action (explore instead of opening the composer)
+- assertVisible: "Explore the app first"
+- tapOn: "Explore the app first"
+
+# Landed in the app.
+- assertVisible: "Ideas to record"

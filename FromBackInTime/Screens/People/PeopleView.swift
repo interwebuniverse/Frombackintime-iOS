@@ -39,6 +39,7 @@ struct PeopleView: View {
             } else {
             ScrollView {
                 AppSearchField(text: $query, prompt: "Search people")
+                    .a11y("people.search")
                     .padding(.horizontal, AppShellTheme.screenPadding)
                     .padding(.bottom, AppSpacing.lg)
 
@@ -122,6 +123,7 @@ struct PeopleView: View {
             } message: {
                 Text(deleteError ?? "")
             }
+            .a11y("people.screen")
             }
         }
     }
@@ -161,6 +163,7 @@ struct PeopleView: View {
             .padding(.vertical, AppSpacing.lg)
         }
         .buttonStyle(.pressableCard)
+        .a11y("people.empty.cta")
     }
 }
 
@@ -182,6 +185,7 @@ struct PersonTile: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.lg)
+        .a11y("person.row")
     }
 }
 

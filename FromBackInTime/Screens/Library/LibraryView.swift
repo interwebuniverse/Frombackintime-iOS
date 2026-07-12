@@ -37,6 +37,7 @@ struct LibraryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
                     AppSearchField(text: $query, prompt: "Search messages")
+                        .a11y("library.search")
                     filterBar
                     if let error = store.error, ctms.isEmpty, standards.isEmpty, query.isEmpty {
                         LoadErrorView(message: error) {
@@ -85,6 +86,7 @@ struct LibraryView: View {
                 MessageDetailView(message: msg)
                     .navigationTransition(.zoom(sourceID: msg.id, in: ns))
             }
+            .a11y("library.screen")
             }
         }
     }

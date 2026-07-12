@@ -54,6 +54,7 @@ struct HomeView: View {
                 MessageDetailView(message: msg)
                     .navigationTransition(.zoom(sourceID: msg.id, in: ns))
             }
+            .a11y("home.screen")
             }
         }
     }
@@ -83,6 +84,7 @@ struct HomeView: View {
                     .matchedTransitionSource(id: next.id, in: ns)
             }
             .buttonStyle(.pressableCard)
+            .a11y("home.next.card")
         } else {
             inviteCard
         }
@@ -172,6 +174,7 @@ struct HomeView: View {
                 .background(Capsule().fill(.white))
             }
             .buttonStyle(.plain)
+            .a11y("home.empty.cta")
             .padding(.top, 2)
         }
         .padding(AppSpacing.xl)
@@ -282,6 +285,7 @@ struct HomeView: View {
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: justCheckedIn)
+        .a11y("home.ctm.card")
     }
 
     private var ctmSubtitle: String {
@@ -417,6 +421,7 @@ struct HomeView: View {
                             }
                         }
                         .buttonStyle(.pressableCard)
+                        .a11y("person.row")
                     }
                 }
                 .padding(.horizontal, AppSpacing.xs)

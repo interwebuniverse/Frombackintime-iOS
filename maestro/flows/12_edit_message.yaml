@@ -1,0 +1,20 @@
+# Open a message, edit its occasion via "Edit details", save, verify the change.
+appId: com.frombackintime.app
+tags: [write]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Words of encouragement"
+- assertVisible: "Edit details"
+- tapOn: "Edit details"
+- assertVisible: "Edit message"
+- tapOn:
+    text: "e.g. Birthday.*"        # occasion field (prefilled)
+- eraseText
+- inputText: "Encouragement, updated"
+- pressKey: Enter
+- tapOn: "Save changes"
+# Back on the detail screen with the new occasion.
+- assertVisible: "Encouragement, updated"

@@ -51,6 +51,7 @@ struct AddPersonView: View {
                 Section("Who is this?") {
                     TextField("Name", text: $name)
                         .textInputAutocapitalization(.words)
+                        .a11y("person.name.field")
                     TextField("Relationship (e.g. Mother, Friend)", text: $relationship)
                         .textInputAutocapitalization(.words)
                     TextField("Email (where the message is delivered)", text: $email)
@@ -78,6 +79,7 @@ struct AddPersonView: View {
                     }
                     .disabled(!canSave)
                     .foregroundStyle(canSave ? AppShellTheme.accent : AppShellTheme.subtitle.opacity(0.4))
+                    .a11y("person.save")
                 }
             }
             .saveGating(

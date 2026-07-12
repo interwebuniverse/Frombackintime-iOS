@@ -53,8 +53,10 @@ struct OBFirstActionView: View {
 
                 Button("Record my first message") { finish(startCreate: true) }
                     .primaryButton()
+                    .a11y("ob.first.record")
                 Button("Explore the app first") { finish(startCreate: false) }
                     .textButton()
+                    .a11y("ob.first.later")
                     .padding(.top, AppSpacing.xs)
             }
             .padding(.horizontal, OnboardingTheme.screenPadding)

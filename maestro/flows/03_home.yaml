@@ -1,0 +1,16 @@
+# Home content: seeded stat tiles, people strip, upcoming feed, idea row.
+appId: com.frombackintime.app
+tags: [smoke]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- assertVisible: "Scheduled"
+- assertVisible: "CTM ready"
+- assertVisible: "People"
+- assertVisible: "Your people"
+- assertVisible: "Mom"
+- assertVisible: "Upcoming deliveries"
+# A seeded upcoming delivery (Sara's voice note, within the 1-year window).
+- assertVisible: "Words of encouragement"

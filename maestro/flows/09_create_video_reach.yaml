@@ -1,0 +1,24 @@
+# Create a VIDEO message up to the recorder. Actual capture uses the system
+# camera/library picker (environment-dependent on the simulator), so this flow
+# verifies navigation into the recorder rather than driving the OS picker.
+appId: com.frombackintime.app
+tags: [create]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Create a message"
+- tapOn: "Video message"
+- tapOn: "Liam"
+- tapOn:
+    text: "e.g. Birthday.*"
+- inputText: "Your first car"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      text: "Record video"
+- tapOn: "Record video"
+# On the recorder screen (record circle is icon-only; assert the visible label).
+- assertVisible:
+    text: "Tap to record.*"

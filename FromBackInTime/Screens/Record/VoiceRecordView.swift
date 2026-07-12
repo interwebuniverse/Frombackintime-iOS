@@ -100,6 +100,7 @@ struct VoiceRecordView: View {
                     .padding(12)
                     .background(Circle().fill(.white.opacity(0.15)))
             }
+            .a11y("voice.close")
             Spacer()
             VStack(spacing: 2) {
                 Text(recipient.name)
@@ -222,6 +223,8 @@ struct VoiceRecordView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .a11y("voice.button")
+                .accessibilityLabel(state == .recording ? "Stop" : "Record")
             }
         }
     }

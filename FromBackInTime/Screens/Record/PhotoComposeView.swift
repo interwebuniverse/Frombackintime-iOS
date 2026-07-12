@@ -93,6 +93,7 @@ struct PhotoComposeView: View {
                 }
             }
         }
+        .a11y("photo.pick")
     }
 
     private var noteEditor: some View {
@@ -108,6 +109,7 @@ struct PhotoComposeView: View {
                     .frame(minHeight: 140)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    .a11y("photo.note")
                 if note.isEmpty {
                     Text("A few words to go with the photo...")
                         .font(.system(size: 16, weight: .medium, design: .rounded))

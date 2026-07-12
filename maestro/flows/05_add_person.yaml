@@ -1,0 +1,25 @@
+# Add a new recipient (name + email) and verify it lands in the People grid.
+# Dismiss the keyboard (pressKey Enter) between fields so the lower ones are
+# reachable.
+appId: com.frombackintime.app
+tags: [write]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn:
+    point: "50%,94%"          # People tab
+- tapOn: "Add"
+- assertVisible: "Add person"
+
+- tapOn: "Name"
+- inputText: "Grandpa Joe"
+- pressKey: Enter
+- tapOn:
+    text: "Email.*"
+- inputText: "joe@example.com"
+- pressKey: Enter
+
+- tapOn: "Add"
+- assertVisible: "Grandpa Joe"

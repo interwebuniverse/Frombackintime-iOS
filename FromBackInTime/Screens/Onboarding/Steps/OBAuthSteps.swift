@@ -74,6 +74,7 @@ struct OBAuthGateView: View {
 
                 Button("Skip for now") { advance() }
                     .textButton()
+                    .a11y("ob.auth.skip")
                     .padding(.top, AppSpacing.lg)
             }
             .padding(.horizontal, OnboardingTheme.screenPadding)

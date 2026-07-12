@@ -46,6 +46,7 @@ struct SignInControls: View {
             .frame(height: 58)
             .clipShape(.capsule)
             .shadow(color: .black.opacity(0.16), radius: 16, y: 8)
+            .a11y("signin.apple")
 
             Button {
                 signInWithGoogle()
@@ -66,6 +67,7 @@ struct SignInControls: View {
                 .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
             }
             .obBounce(scale: 0.98)
+            .a11y("signin.google")
         }
         .opacity(isWorking ? 0.5 : 1)
         .disabled(isWorking)
@@ -182,6 +184,7 @@ struct SignInSheet: View {
                 Button("Not now") { dismiss() }
                     .textButton()
                     .padding(.top, AppSpacing.lg)
+                    .a11y("signin.skip")
             }
             .padding(.horizontal, OnboardingTheme.screenPadding)
             .padding(.bottom, OnboardingTheme.bottomPadding)

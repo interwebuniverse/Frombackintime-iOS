@@ -1,0 +1,17 @@
+# Settings sheet: verify the key rows render. (No sign-out/delete: they mutate
+# session state and would disrupt other flows.)
+appId: com.frombackintime.app
+tags: [read]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Settings"
+- assertVisible: "Settings"
+- assertVisible: "Privacy policy"
+- assertVisible: "Terms of service"
+- assertVisible: "Sign out"
+- assertVisible: "Delete account"
+- tapOn: "Done"
+- assertVisible: "Upcoming deliveries"

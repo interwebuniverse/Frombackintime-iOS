@@ -107,6 +107,7 @@ struct RecordView: View {
                     .padding(12)
                     .background(Circle().fill(.white.opacity(0.15)))
             }
+            .a11y("record.close")
             Spacer()
             VStack(spacing: 2) {
                 Text(recipient.name)
@@ -180,6 +181,8 @@ struct RecordView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .a11y("record.button")
+                .accessibilityLabel(state == .recording ? "Stop" : "Record")
             }
         }
     }

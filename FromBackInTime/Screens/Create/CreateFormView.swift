@@ -53,6 +53,7 @@ struct CreateFormView: View {
 
                 section(title: "To whom?") {
                     recipientPicker
+                        .a11y("form.recipient")
                 }
 
                 section(title: "Occasion") {
@@ -64,6 +65,7 @@ struct CreateFormView: View {
                             RoundedRectangle(cornerRadius: AppRadius.md)
                                 .strokeBorder(AppShellTheme.subtitle.opacity(0.15), lineWidth: 1)
                         )
+                        .a11y("form.occasion")
                 }
 
                 if kind == .standard {
@@ -74,6 +76,7 @@ struct CreateFormView: View {
                             .padding(AppSpacing.md)
                             .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
                             .shadow(color: AppShellTheme.cardShadow, radius: 10, y: 4)
+                            .a11y("form.date")
                     }
                 } else {
                     ctmExplainer
@@ -84,6 +87,7 @@ struct CreateFormView: View {
             .padding(AppShellTheme.screenPadding)
             .padding(.bottom, AppSpacing.xxxl)
         }
+        .scrollDismissesKeyboard(.immediately)
         .navigationDestination(isPresented: $goToComposer) {
             if let id = selectedRecipientID, let recipient = store.recipient(id: id) {
                 composer(for: recipient)
@@ -94,6 +98,7 @@ struct CreateFormView: View {
                 .presentationDetents([.medium, .large])
                 .presentationCornerRadius(28)
         }
+        .a11y("form.screen")
     }
 
     @ViewBuilder
@@ -234,6 +239,7 @@ struct CreateFormView: View {
         }
         .buttonStyle(.plain)
         .disabled(!canContinue)
+        .a11y("form.continue")
     }
 
     private var continueTitle: String {

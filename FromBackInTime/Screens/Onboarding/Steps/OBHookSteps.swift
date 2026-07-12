@@ -89,6 +89,7 @@ struct OBHookOpenView: View {
                     state.path.append(.authGate)
                 }
                 .textButton()
+                .a11y("ob.have.account")
                     .padding(.top, AppSpacing.xs)
                     .opacity(appeared ? 1 : 0)
             }
@@ -203,6 +204,7 @@ struct OBNameInputView: View {
                     .focused($focused)
                     .submitLabel(.done)
                     .onSubmit { if canContinue { state.advance(from: .nameInput) } }
+                    .a11y("ob.name.field")
 
                 Spacer()
 

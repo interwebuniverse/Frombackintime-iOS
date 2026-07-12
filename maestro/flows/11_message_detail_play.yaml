@@ -1,0 +1,15 @@
+# Open a seeded VOICE message from Home and exercise the playback control.
+# (Mock media has no real audio to decode, so we don't assert a Play->Pause
+# flip; we verify the detail + control render and the button is tappable.)
+appId: com.frombackintime.app
+tags: [read]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Words of encouragement"
+- assertVisible: "To Sara"
+- assertVisible: "Delete message"
+- assertVisible: "Play"
+- tapOn: "Play"

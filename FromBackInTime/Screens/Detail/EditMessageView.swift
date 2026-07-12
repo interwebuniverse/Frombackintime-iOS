@@ -89,6 +89,7 @@ struct EditMessageView: View {
             } message: {
                 Text(saveError ?? "")
             }
+            .a11y("edit.screen")
         }
     }
 
@@ -148,6 +149,7 @@ struct EditMessageView: View {
         }
         .buttonStyle(.plain)
         .disabled(!canSave)
+        .a11y("edit.save")
     }
 
     private func save() {

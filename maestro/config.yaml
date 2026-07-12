@@ -1,0 +1,7 @@
+# Maestro suite config. Run everything with:  maestro test maestro/
+# Flows are ordered; each is independent (self-launches with clearState).
+flows:
+  - "flows/*.yaml"
+
+# Global execution order is by filename. Tags let you run subsets, e.g.
+#   maestro test --include-tags e2e maestro/

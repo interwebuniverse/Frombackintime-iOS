@@ -44,6 +44,7 @@ struct MessageRow: View {
                 AppIcon(name: "app-ic-chevron", size: 15, color: AppShellTheme.faint)
             }
         }
+        .a11y("message.row")
     }
 
     private var ctmBadge: some View {

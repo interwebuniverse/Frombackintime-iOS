@@ -112,6 +112,7 @@ struct OBChoiceRow: View {
             .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 5)
         }
         .obBounce()
+        .a11y("ob.choice")
         .animation(OnboardingTheme.bounce, value: isSelected)
     }
 }
@@ -249,10 +250,12 @@ struct OBBottomBar<Trailing: View>: View {
             Button(title, action: action)
                 .primaryButton()
                 .disabled(!enabled)
+                .a11y("ob.continue")
 
             if let secondaryTitle, let secondaryAction {
                 Button(secondaryTitle, action: secondaryAction)
                     .textButton()
+                    .a11y("ob.secondary")
             }
         }
         .padding(.horizontal, OnboardingTheme.screenPadding)

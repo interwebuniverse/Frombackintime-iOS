@@ -77,6 +77,7 @@ struct MessageDetailView: View {
         } message: {
             Text(actionError ?? "")
         }
+        .a11y("detail.screen")
     }
 
     private func loadDetail() async {
@@ -346,6 +347,7 @@ struct MessageDetailView: View {
                 }
                 .buttonStyle(.pressableCard)
                 .disabled(isWorking)
+                .a11y("detail.edit")
             }
 
             if current.kind == .ctm {
@@ -396,6 +398,7 @@ struct MessageDetailView: View {
             }
             .buttonStyle(.pressableCard)
             .disabled(isWorking)
+            .a11y("detail.delete")
         }
         .alert("Share this access code", isPresented: accessCodeBinding) {
             Button("Done", role: .cancel) { store.lastAccessCode = nil }
@@ -464,6 +467,7 @@ struct MessageDetailView: View {
         }
         .buttonStyle(.pressableCard)
         .disabled(mediaURL == nil)
+        .a11y("detail.play")
     }
 
     private func togglePlayback() {

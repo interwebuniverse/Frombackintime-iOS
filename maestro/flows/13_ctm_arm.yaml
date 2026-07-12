@@ -1,0 +1,30 @@
+# Arm a Critical Timed Message (dead-man's-switch), then do a Home check-in.
+# The "Activate CTM" button sits low (under the floating tab bar), so center it
+# in the viewport before tapping.
+appId: com.frombackintime.app
+tags: [e2e, ctm]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn:
+    point: "72%,94%"                 # Library tab
+- tapOn: "CTM"
+- assertVisible: "Critical Timed Messages"
+- tapOn: "Last words"                # a seeded, not-yet-armed CTM
+- scrollUntilVisible:
+    element:
+      text: "Activate CTM"
+    centerElement: true
+- tapOn: "Activate CTM"
+- assertVisible:
+    text: "This switch is armed.*"
+
+# The armed switch surfaces the Home check-in card.
+- tapOn:
+    point: "27%,94%"                 # Home tab
+- scrollUntilVisible:
+    element:
+      text: "I'm here"
+- tapOn: "I'm here"

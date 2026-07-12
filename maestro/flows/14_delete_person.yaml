@@ -1,0 +1,29 @@
+# Add a throwaway recipient then delete it via the long-press context menu.
+appId: com.frombackintime.app
+tags: [write]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn:
+    point: "50%,94%"          # People tab
+- tapOn: "Add"
+- tapOn: "Name"
+- inputText: "Temp Person"
+- pressKey: Enter
+- tapOn:
+    text: "Email.*"
+- inputText: "temp@example.com"
+- pressKey: Enter
+- tapOn: "Add"
+- assertVisible: "Temp Person"
+
+# Long-press opens the Edit / Delete context menu; confirm the destructive alert.
+- longPressOn: "Temp Person"
+- tapOn: "Delete"
+- assertVisible:
+    text: "Delete Temp Person.*"
+- tapOn:
+    text: "Delete"
+- assertNotVisible: "Temp Person"

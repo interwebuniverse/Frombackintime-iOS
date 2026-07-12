@@ -1,0 +1,25 @@
+# Library tab: filter pills + search over the seeded messages.
+appId: com.frombackintime.app
+tags: [read]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn:
+    point: "72%,94%"          # Library tab
+- assertVisible: "Search messages"
+- assertVisible: "Standard Messages"
+
+# Filter pills.
+- tapOn: "CTM"
+- assertVisible: "Critical Timed Messages"
+- tapOn: "Scheduled"
+- assertVisible: "Standard Messages"
+- tapOn: "All"
+
+# Search.
+- tapOn: "Search messages"
+- inputText: "Birthday"
+- assertVisible: "Birthday"
+- pressKey: Enter

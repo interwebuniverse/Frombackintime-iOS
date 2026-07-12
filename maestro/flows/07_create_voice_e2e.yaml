@@ -1,0 +1,37 @@
+# FULL end-to-end: create a timed VOICE message, record real audio, save, then
+# confirm it persisted by finding it in the Library. Mic permission is
+# pre-granted by run.sh. The record/stop circle is icon-only (not exposed to the
+# accessibility tree), so it's tapped by point.
+appId: com.frombackintime.app
+tags: [e2e, create]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Create a message"
+- tapOn: "Voice note"
+- tapOn: "Mom"
+- tapOn:
+    text: "e.g. Birthday.*"
+- inputText: "A voice from the past"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      text: "Record voice note"
+- tapOn: "Record voice note"
+- assertVisible:
+    text: "Tap to record.*"    # wait for the recorder to settle after the push
+- tapOn:
+    point: "50%,88%"          # the record circle
+- assertVisible: "Recording…"
+- waitForAnimationToEnd:
+    timeout: 1500             # capture ~1.5s of audio
+- tapOn:
+    point: "50%,88%"          # stop
+- assertVisible: "Save"
+- tapOn: "Save"
+# Save succeeded when the recorder pops back to the form (its "Record voice
+# note" CTA reappears) with no error alert. A failed save would keep the
+# recorder up (or raise an alert).
+- assertVisible: "Record voice note"

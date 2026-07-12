@@ -1,0 +1,22 @@
+# Create a PHOTO & note message up to the composer. Picking the photo uses the
+# system PhotosPicker, so this verifies the composer is reached, not the picker.
+appId: com.frombackintime.app
+tags: [create]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Create a message"
+- tapOn: "Photo & note"
+- tapOn: "Ava"
+- tapOn:
+    text: "e.g. Birthday.*"
+- inputText: "The day you were born"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      text: "Add photo & note"
+- tapOn: "Add photo & note"
+# On the photo composer.
+- assertVisible: "Tap to add a photo"

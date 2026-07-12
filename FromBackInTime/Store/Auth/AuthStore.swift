@@ -34,17 +34,39 @@ final class AuthStore {
         }
     }
 
+#if MOCK
+    // The Mock scheme runs as a signed-in test user so every create / edit / CTM
+    // / add-person flow is exercisable (and demoable) without a real Apple or
+    // Google sign-in. Applied at every session entry point below. Live builds are
+    // unaffected (start anonymous, upgrade on real sign-in).
+    private func applyMockSession() {
+        state.isAuthenticated = true
+        state.isAnonymous = false
+        state.userId = "mock-user"
+        state.email = "you@frombackintime.app"
+        state.sessionExpired = false
+    }
+#endif
+
     // Guarantee a usable session before the app makes authed calls.
     func ensureSession() async {
+        #if MOCK
+        applyMockSession()
+        #else
         if SessionStore.isSignedIn {
             restoreFromStoredSession()
             return
         }
         await signInAnonymously()
+        #endif
     }
 
     func signInAnonymously() async {
+        #if MOCK
+        applyMockSession()
+        #else
         await run { try await self.repository.signInAnonymously() }
+        #endif
     }
 
     func signInWithApple(idToken: String, nonce: String?) async {
@@ -135,6 +157,10 @@ final class AuthStore {
     /// Rebuild auth state from the stored access token's claims, so a cold
     /// launch knows whether the session is anonymous without a network call.
     private func restoreFromStoredSession() {
+        #if MOCK
+        applyMockSession()
+        return
+        #endif
         guard let token = SessionStore.accessToken, !token.isEmpty else { return }
         state.isAuthenticated = true
         guard let claims = JWT.payload(of: token) else { return }

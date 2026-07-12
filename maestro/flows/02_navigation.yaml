@@ -1,0 +1,22 @@
+# Tab navigation across the three-tab shell. Tabs are tapped by point: the word
+# "People" also appears as a Home stat-tile label, so a text tap is ambiguous.
+appId: com.frombackintime.app
+tags: [smoke]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- assertVisible: "Upcoming deliveries"     # Home
+
+- tapOn:
+    point: "50%,94%"                        # People tab
+- assertVisible: "Search people"
+
+- tapOn:
+    point: "72%,94%"                        # Library tab
+- assertVisible: "Search messages"
+
+- tapOn:
+    point: "27%,94%"                        # Home tab
+- assertVisible: "Upcoming deliveries"

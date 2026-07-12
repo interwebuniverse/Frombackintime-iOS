@@ -19,6 +19,7 @@ struct OnboardingView: View {
                     OnboardingStepScreen(step: step)
                 }
         }
+        .a11y("onboarding.screen")
         .environment(state)
         .tint(OnboardingTheme.accent)
         .onAppear {

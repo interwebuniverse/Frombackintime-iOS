@@ -34,6 +34,7 @@ struct SettingsView: View {
             listContent
                 .background(AppBackground())
                 .scrollContentBackground(.hidden)
+                .a11y("settings.screen")
         }
     }
 
@@ -85,8 +86,11 @@ struct SettingsView: View {
 
                 Section("About") {
                     linkRow(title: "Privacy Policy", systemImage: "lock.shield", url: "https://frombackintime.com/privacy")
+                        .a11y("settings.privacy")
                     linkRow(title: "Terms of Service", systemImage: "doc.text", url: "https://frombackintime.com/terms")
+                        .a11y("settings.terms")
                     linkRow(title: "Contact support", systemImage: "envelope", url: "mailto:support@frombackintime.com")
+                        .a11y("settings.support")
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "info.circle")
                             .font(.system(size: 16, weight: .medium))
@@ -110,6 +114,7 @@ struct SettingsView: View {
                             Text("Sign out")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                         }
+                        .a11y("settings.signout")
                         Button(role: .destructive) {
                             Haptics.feedback(style: .heavy)
                             showDeleteConfirm = true
@@ -118,6 +123,7 @@ struct SettingsView: View {
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                         }
                         .disabled(isDeleting)
+                        .a11y("settings.delete")
                     }
                 }
             }

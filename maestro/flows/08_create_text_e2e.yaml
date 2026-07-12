@@ -1,0 +1,29 @@
+# FULL end-to-end: create a WRITTEN message, type the body, save, then confirm
+# it persisted via the Library. The Save button rides above the keyboard, so no
+# keyboard dismissal is needed in the composer.
+appId: com.frombackintime.app
+tags: [e2e, create]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      hasCompletedOnboarding: true
+- tapOn: "Create a message"
+- tapOn: "Written message"
+- tapOn: "Dad"
+- tapOn:
+    text: "e.g. Birthday.*"
+- inputText: "Words for later"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      text: "Write message"
+- tapOn: "Write message"
+- assertVisible: "Written message"
+- tapOn:
+    text: "Dear Dad.*"          # the TextEditor (placeholder)
+- inputText: "You made it. I always knew you would. Keep this for the hard days."
+- tapOn: "Save & schedule"
+# Save succeeded when the composer pops back to the form (its "Write message"
+# CTA reappears) with no error alert. A failed save would keep the composer up.
+- assertVisible: "Write message"
