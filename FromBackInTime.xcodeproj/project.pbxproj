@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		681AA1C52E7FAE77005DB953 /* KeychainSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 681AA1C42E7FAE77005DB953 /* KeychainSwift */; };
+		A1B2C3D40000000000000001 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40000000000000002 /* SuperwallKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				681AA1C52E7FAE77005DB953 /* KeychainSwift in Frameworks */,
+				A1B2C3D40000000000000001 /* SuperwallKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +133,7 @@
 			name = FromBackInTime;
 			packageProductDependencies = (
 				681AA1C42E7FAE77005DB953 /* KeychainSwift */,
+				A1B2C3D40000000000000002 /* SuperwallKit */,
 			);
 			productName = FromBackInTime;
 			productReference = 68D5F0022E7F9E0B0032D089 /* FromBackInTime.app */;
@@ -216,6 +219,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				681AA1C32E7FAE77005DB953 /* XCRemoteSwiftPackageReference "keychain-swift" */,
+				A1B2C3D40000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 68D5F0032E7F9E0B0032D089 /* Products */;
@@ -740,6 +744,14 @@
 				minimumVersion = 24.0.0;
 			};
 		};
+		A1B2C3D40000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/superwall/Superwall-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -747,6 +759,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 681AA1C32E7FAE77005DB953 /* XCRemoteSwiftPackageReference "keychain-swift" */;
 			productName = KeychainSwift;
+		};
+		A1B2C3D40000000000000002 /* SuperwallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D40000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
+			productName = SuperwallKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

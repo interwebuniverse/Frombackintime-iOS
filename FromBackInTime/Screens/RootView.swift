@@ -12,19 +12,34 @@ struct RootView: View {
     @Environment(AppState.self) private var appState
     @Environment(AuthStore.self) private var authStore
     @Environment(MockAppStore.self) private var appStore
+    @Environment(PaywallManager.self) private var paywall
     @State private var showFirstCreate = false
 
     var body: some View {
         Group {
-            if appState.hasCompletedOnboarding {
+            if !appState.hasCompletedOnboarding {
+                OnboardingView()
+                    .transition(.opacity)
+            } else if paywall.isResolving {
+                // Brief, cold-launch only: entitlement status still resolving.
+                // Show the sky rather than flashing the paywall over a paid user.
+                ZStack {
+                    AppBackground()
+                    ProgressView().tint(AppShellTheme.accent)
+                }
+                .transition(.opacity)
+            } else if paywall.isSubscribed {
                 MainTabView()
                     .transition(.opacity)
             } else {
-                OnboardingView()
+                // Hard gate: finished onboarding but not paying.
+                PaywallGateView()
                     .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.35), value: appState.hasCompletedOnboarding)
+        .animation(.easeInOut(duration: 0.35), value: paywall.isSubscribed)
+        .animation(.easeInOut(duration: 0.35), value: paywall.isResolving)
         .onChange(of: appState.hasCompletedOnboarding) { _, done in
             // "Record my first message" chose to jump straight into creating;
             // wait out the swap animation so the sheet presents cleanly.
@@ -66,4 +81,5 @@ struct RootView: View {
         .environment(container)
         .environment(container.makeAuthStore())
         .environment(container.makeAppStore())
+        .environment(PaywallManager())
 }

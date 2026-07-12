@@ -20,7 +20,15 @@ final class AppState {
     var pendingFirstCreate = false
 
     init() {
+        #if MOCK
+        // The Mock scheme (automated suite + demos) starts past onboarding as a
+        // signed-in, subscribed test user; onboarding itself is exercised on the
+        // live scheme. Set synchronously so the suite never asserts during the
+        // brief onboarding window while the launch task establishes the session.
+        hasCompletedOnboarding = true
+        #else
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Self.onboardedKey)
+        #endif
     }
 
     func completeOnboarding() {

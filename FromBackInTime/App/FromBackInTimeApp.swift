@@ -18,6 +18,9 @@ struct FromBackInTimeApp: App {
     @State private var authStore: AuthStore
     @State private var appStore: MockAppStore
 
+    // Superwall hard paywall: gates the app after onboarding.
+    @State private var paywall = PaywallManager()
+
     init() {
         let container = DependencyContainer()
         _container = State(wrappedValue: container)
@@ -39,11 +42,17 @@ struct FromBackInTimeApp: App {
                 .environment(appState)
                 .environment(authStore)
                 .environment(appStore)
+                .environment(paywall)
                 .preferredColorScheme(.light)   // app is light-only by design
                 .task {
+                    // Configure Superwall first so entitlement status starts
+                    // resolving before we decide whether to gate the app.
+                    paywall.configure()
                     // Onboarding-first: establish an anonymous session so every
                     // authed call has a token, then load the user's data.
                     await authStore.ensureSession()
+                    // Tie the paywall/entitlement to the account.
+                    paywall.identify(userId: authStore.state.userId)
                     // A returning, signed-in user (e.g. after a reinstall that
                     // wiped the onboarding flag but kept the Keychain session)
                     // shouldn't be marched back through onboarding.

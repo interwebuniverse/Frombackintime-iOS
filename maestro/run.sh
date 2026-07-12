@@ -59,9 +59,10 @@ if [ "$BUILD" -eq 1 ]; then
     -destination "platform=iOS Simulator,id=$UDID" -derivedDataPath "$DERIVED" \
     build | tail -2
 fi
-# The Mock scheme builds the "Mock" configuration -> Mock-iphonesimulator (NOT
-# Debug-iphonesimulator). Find the product instead of hardcoding the path.
-APP="$(find "$DERIVED/Build/Products" -maxdepth 2 -name 'FromBackInTime.app' -path '*imulator*' | head -1)"
+# The Mock scheme builds the "Mock" configuration -> Mock-iphonesimulator. Target
+# it specifically: a stale Debug-iphonesimulator (live) build must never be
+# installed for the suite, or the real hard paywall blocks every flow.
+APP="$(find "$DERIVED/Build/Products" -maxdepth 2 -name 'FromBackInTime.app' -path '*Mock-iphonesimulator*' | head -1)"
 echo ">>> Installing $APP"
 xcrun simctl install "$UDID" "$APP"
 

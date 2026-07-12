@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "superwall": {
+      "source": "superwall/skills",
+      "sourceType": "github",
+      "skillPath": "skills/superwall/SKILL.md",
+      "computedHash": "bfec156be286eadd00a2957abf19353c591e89993d89c3e5836a41257c4e042a"
+    },
+    "superwall-editor": {
+      "source": "superwall/skills",
+      "sourceType": "github",
+      "skillPath": "skills/superwall-editor/SKILL.md",
+      "computedHash": "6d3ba4a275a031e061a586f69ee6081ae1bdb2429239be187efa0fd378872e4a"
+    },
+    "wwdc": {
+      "source": "superwall/skills",
+      "sourceType": "github",
+      "skillPath": "skills/wwdc/SKILL.md",
+      "computedHash": "117952b82d3598c87f50ae3f0a9d549afabd6c35808c62c6ba693cb130179f4e"
+    }
+  }
+}
