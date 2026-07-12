@@ -26,10 +26,6 @@ final class Router {
         paths = []
     }
     
-    func popLast() {
-        paths.removeLast()
-    }
-    
     func navigate(_ destination: RouterDestination) {
         paths.append(destination)
     }

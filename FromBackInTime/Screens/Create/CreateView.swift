@@ -136,9 +136,7 @@ struct MediumCard: View {
                     .multilineTextAlignment(.leading)
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(AppShellTheme.subtitle.opacity(0.6))
+            AppIcon(name: "app-ic-chevron", size: 14, color: AppShellTheme.faint)
         }
         .padding(AppSpacing.lg)
         .background(
@@ -164,9 +162,7 @@ struct MediumCard: View {
                 )
                 .frame(width: 56, height: 56)
                 .shadow(color: deepTint.opacity(0.4), radius: 10, y: 4)
-            Image(systemName: medium.icon)
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(.white)
+            AppIcon(name: medium.glyph, size: 26, color: .white)
         }
     }
 }

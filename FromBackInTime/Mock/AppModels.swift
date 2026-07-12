@@ -49,15 +49,6 @@ enum MessageMedium: String, Codable, Hashable, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .video: return "video.fill"
-        case .voice: return "waveform"
-        case .photo: return "photo.fill"
-        case .text: return "text.alignleft"
-        }
-    }
-
     /// Hue used for the card gradient and small badge on lists.
     var hue: Double {
         switch self {
@@ -65,6 +56,16 @@ enum MessageMedium: String, Codable, Hashable, CaseIterable, Identifiable {
         case .voice: return 0.78   // soft violet
         case .photo: return 0.07   // peach
         case .text:  return 0.36   // sage green
+        }
+    }
+
+    /// icons8 glyph (app-ic-*) used across the main shell.
+    var glyph: String {
+        switch self {
+        case .video: return "app-ic-video"
+        case .voice: return "app-ic-mic"
+        case .photo: return "app-ic-photo"
+        case .text:  return "app-ic-text"
         }
     }
 

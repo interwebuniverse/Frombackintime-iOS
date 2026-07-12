@@ -9,21 +9,76 @@ real repositories in the live scheme and still runs seeded/in-memory in the Mock
 scheme.
 
 - **Auth**: Supabase anonymous sign-in on launch (`AuthStore.ensureSession`),
-  token in Keychain, injected as Bearer on every call. Apple/Google sign-in is
-  stubbed (`AuthStore.signInWithApple`) for the next pass.
-- **Wired to backend**: recipients (list/create with email), messages
-  (list/create/finalize/delete), CTM (arm + one-time access code, check-in,
-  snooze), profile (delete account, sign out).
-- **All media is real capture now**: text (create→finalize→scheduled), photo
-  (`PhotosPicker` → JPEG), voice (`AVAudioRecorder` → m4a), video (camera via
-  `MoviePicker` → mp4). Each uploads to R2 through the presigned-PUT flow, then
-  finalizes. Info.plist carries the mic + camera usage strings.
+  token in Keychain, injected as Bearer on every call. Apple + Google sign-in
+  are fully wired in the onboarding auth gate (`OBAuthGateView`): Apple via
+  native `SignInWithAppleButton` + nonce (`SignInCrypto`), Google via Supabase
+  hosted OAuth PKCE in `ASWebAuthenticationSession` (`GoogleAuthSession`,
+  callback scheme `frombackintime://auth-callback`). Needs Supabase dashboard
+  config: enable Apple provider (client ID = bundle ID), Google provider (web
+  client ID + secret), and add the callback URL to allowed redirect URLs.
+- **Session lifecycle**: `NetworkClient` retries once after a 401 by refreshing
+  the token through `SessionRefresher` (actor, dedupes concurrent refreshes;
+  Supabase rotates refresh tokens). If refresh fails it clears the session and
+  posts `.unauthorizedAccess`; `AuthStore` self-heals to a fresh anonymous
+  session and posts `.sessionReplaced`, which `FromBackInTimeApp` listens to
+  and reloads user data. On cold launch `AuthStore` restores
+  `is_anonymous`/`sub`/`email` from the stored JWT claims (`JWT.payload`).
+  If the session that *dropped* was a real (non-anonymous) one, `AuthState.sessionExpired`
+  is set so `RootView` presents a "sign back in" `SignInSheet` instead of
+  silently swapping the vault for an empty anonymous one (which reads as data
+  loss). A reinstall that wipes the onboarding flag but keeps the Keychain
+  session skips onboarding (the launch `.task` calls `completeOnboarding` when a
+  signed-in session is restored). Sign-out leaves the user in the app as
+  anonymous (no forced re-onboarding); only delete-account resets onboarding.
+- **Sign-in gates (no orphaned data)**: Apple/Google sign-in mints a NEW
+  Supabase user, so anything created anonymously would orphan on upgrade. All
+  creates (add person, save any message) therefore require a real account:
+  anonymous users get `SignInSheet` (shared `SignInControls` with the
+  onboarding gate) and the action retries after sign-in. The backend also
+  403-gates finalize/CTM-arm with a "Sign in..." message the app surfaces.
+- **Wired to backend**: recipients (list/create/edit/delete — delete handles
+  the 409 while armed/scheduled messages exist), messages
+  (list/create/finalize/**edit via PATCH**/delete + detail with decrypted body
+  and presigned playback `media` URL), CTM (arm + one-time access code; check-in
+  + snooze via the Home card that shows whenever a switch is armed), profile
+  (GET/PATCH /v1/me — onboarding pushes name/timezone/notifPrefs at finish;
+  delete account, sign out). Editing a scheduled message's who/when/occasion is
+  `EditMessageView` (sheet from `MessageDetailView`, `store.updateMessage` →
+  PATCH); media itself is not editable (re-record to replace).
+- **All media is real capture and real playback**: photo (`PhotosPicker` →
+  JPEG), voice (`AVAudioRecorder` → m4a), video (camera via `MoviePicker`,
+  5-min cap, real content-type of the clip — quicktime/mp4, both backend-allowed);
+  presigned-PUT upload to R2 then finalize (failed saves roll back the draft).
+  A `.savingOverlay` veils the composer while a large upload runs so it never
+  looks frozen. Capture is permission-gated via `MediaPermission`
+  (`ensure(_:)`: not-determined → ask; denied → the shared `.permissionAlert`
+  offers Open Settings). Voice recording that captures nothing (denied/interrupted)
+  never fakes a save — `saveMessage` rejects a media message with no bytes, and
+  the composer resets to idle with a message. `MessageDetailView` fetches the
+  detail on open, sets `AVAudioSession` to `.playback` (audible with the mute
+  switch on), caches its `AVPlayer`, and plays media via
+  `VideoPlayer`/`AVPlayer`/`AsyncImage`.
+- **Error surfacing**: backend error envelope `{error:{code,message}}` decodes
+  into `NetworkErrorModel` (LocalizedError), so alerts show the backend's
+  actual message (including 402 paywall text). Every composer/write shows a
+  saving state and an error alert instead of fire-and-forget. Home/Library/People
+  each show three states off `store.isInitialLoading`/`store.error`: a
+  `LoadingStateView` spinner on first load (never a false "empty"), a
+  `LoadErrorView` with retry when the first load failed, and the real
+  empty/content states otherwise; all three are pull-to-refresh. Delivery-date
+  pickers start at tomorrow so "today" can't trip the past-date 400.
+- **Onboarding flow edges**: "I already have an account" (hookOpen) marks
+  `OnboardingState.isReturningUser` — the auth gate then goes straight into the
+  app on sign-in or skip. "Record my first message" sets
+  `AppState.pendingFirstCreate` and RootView opens the create sheet after the
+  swap. Apple's first-auth given name backfills the greeting name.
 - **Config**: `SupabaseConfig` holds the project URL + publishable key.
-  `BASE_HOST` = `api.frombackintime.app` (update to the live domain once DNS is up).
-- **Remaining (infra/verification, not code)**: enable "Anonymous sign-ins" in
-  the Supabase dashboard; point `BASE_HOST` at the live TLS domain; run a live
-  end-to-end smoke test once the backend is deployed + reachable. Apple/Google
-  sign-in is stubbed (`AuthStore.signInWithApple`) for the next pass.
+  `BASE_HOST` = `api.frombackintime.com`.
+- **Remaining (infra/verification, not code)**: Supabase provider config for
+  Apple + Google (see Auth above); Apple Developer App ID needs the Sign in
+  with Apple capability (entitlements file is already wired in the project);
+  the backend commit adding the playback `media` field to GET /v1/messages/:id
+  needs push + Dokploy deploy (iOS treats it as optional until then).
 
 ## Architecture
 
@@ -172,6 +227,46 @@ The Mock scheme sets `SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG MOCK`, which f
    - Global: create in `FromBackInTimeApp.init()`, inject via `.environment()`
 
 ## Design system
+
+### Main-shell look (`Screens/Main/`)
+The post-onboarding app has its own token set in `AppShellTheme` (kept separate
+from onboarding's `OnboardingTheme`):
+- **Canvas**: `AppBackground` is the onboarding sky (`ob-sky-quiz` by default;
+  pass `image:` to vary) under a soft top-white + bottom-canvas veil so titles
+  and opaque cards stay crisp while the clouds ground the floating tab bar. Used
+  behind every main screen and sheet. (`AppShellTheme.canvasTop/canvasBottom`
+  remain the fallback tones for scrims.)
+- **Home is built to feel alive, not a bare list**: a time-of-day greeting
+  title (`greetingTitle`, uses `AuthStore.state.profileName`), a blue "Your next
+  message" spotlight card with a live countdown (or an invite card when nothing
+  is scheduled), quick stat tiles, the CTM check-in, an "Ideas to record"
+  horizontal row (`HomeIdea.all`) that opens Create pre-set to a kind, the
+  people strip, and the upcoming feed.
+- **Accent** `#2563EB` (refined sky-blue), **gold** `#DF9E30` (CTM/premium),
+  `title` bluish-charcoal, `subtitle`/`faint` cool grays. `accentSoft`/`goldSoft`
+  are the tint washes behind icons.
+- **Cards**: white, `cardRadius` 22, hairline `cardBorder` + soft `cardShadow`.
+  `AppCard` applies all three; stat tiles replicate it inline.
+- **Icons — icons8 "Puffy Outline", not SF Symbols.** The main shell speaks one
+  icon language: icons8 **Puffy Outline** (`puffy`) — soft, rounded, hand-drawn
+  monochrome line icons — imported as **template** images (`app-ic-*` at
+  512px; `app-tab-*` at 1x/2x/3x for the tab bar). Because they're monochrome
+  they tint like any template: render with `AppIcon(name:size:color:)`. Tab bar
+  uses `app-tab-home/people/library` via a styled `UITabBarAppearance` (accent
+  active, gray inactive). `AppScreen` renders a **custom header** (bare plus/gear
+  + big rounded title) and hides the system nav bar — iOS 26 wraps every real
+  toolbar item in a "glass" capsule that can't be removed per-item, so keeping
+  the actions in-content is the only way to get bare icons on the sky.
+  People/Library use `AppSearchField` (custom, icons8 magnifier) instead of
+  `.searchable`; pushed detail screens re-show the nav bar with
+  `.toolbar(.visible, for: .navigationBar)` so back buttons work.
+  `MessageMedium.glyph` maps
+  each medium to its `app-ic-*`. To add an icon: pull from the icons8 MCP
+  (platform `puffy`), drop a 512px template imageset named
+  `app-ic-<thing>` (Contents.json `template-rendering-intent: template`), use via
+  `AppIcon` (platform `puffy` for outline; `puffy-filled` exists if a filled
+  variant is ever wanted). Tab icons additionally need 1x/2x/3x (25/50/75px) so
+  the bar renders them at point size.
 
 ### Colors (`Extensions/Color/Color+App.swift`)
 - Semantic tokens: `Color.appPrimary`, `.appSecondary`, `.appBackground`, `.appSurface`, `.appCardBackground`, `.appBorder`, `.appAccent`, `.appError`, `.appSuccess`, etc.

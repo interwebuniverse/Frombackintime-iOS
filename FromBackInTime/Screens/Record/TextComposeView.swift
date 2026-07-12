@@ -11,6 +11,7 @@ import SwiftUI
 struct TextComposeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MockAppStore.self) private var store
+    @Environment(AuthStore.self) private var authStore
 
     let recipient: Recipient
     let kind: MessageKind
@@ -18,6 +19,9 @@ struct TextComposeView: View {
     let deliveryDate: Date?
 
     @State private var body_: String = ""
+    @State private var isSaving = false
+    @State private var saveError: String?
+    @State private var showSignIn = false
     @FocusState private var focused: Bool
 
     private var trimmed: String { body_.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -38,6 +42,12 @@ struct TextComposeView: View {
         .navigationTitle("Written message")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { focused = true }
+        .saveGating(
+            showSignIn: $showSignIn,
+            error: $saveError,
+            signInSubtitle: "Sign in to seal this message and schedule its delivery.",
+            retry: save
+        )
     }
 
     private var header: some View {
@@ -86,7 +96,7 @@ struct TextComposeView: View {
 
     private var saveButton: some View {
         Button(action: save) {
-            Text("Save & schedule")
+            Text(isSaving ? "Saving\u{2026}" : "Save & schedule")
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -97,11 +107,17 @@ struct TextComposeView: View {
                 )
         }
         .buttonStyle(.plain)
-        .disabled(!canSave)
+        .disabled(!canSave || isSaving)
     }
 
     private func save() {
-        Haptics.notification(type: .success)
+        guard !isSaving else { return }
+        // Scheduling requires a real account; the gate also stops drafts from
+        // being created under an anonymous identity that sign-in would orphan.
+        guard !authStore.state.isAnonymous else {
+            showSignIn = true
+            return
+        }
         let msg = Message(
             recipientID: recipient.id,
             kind: kind,
@@ -111,9 +127,17 @@ struct TextComposeView: View {
             durationSeconds: 0,
             bodyText: trimmed
         )
+        isSaving = true
         Task {
-            await store.saveMessage(msg)
-            dismiss()
+            let ok = await store.saveMessage(msg)
+            isSaving = false
+            if ok {
+                Haptics.notification(type: .success)
+                dismiss()
+            } else {
+                Haptics.notification(type: .error)
+                saveError = store.error ?? "Something went wrong. Please try again."
+            }
         }
     }
 }

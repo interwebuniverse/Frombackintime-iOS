@@ -15,6 +15,10 @@ final class AppState {
 
     var hasCompletedOnboarding: Bool
 
+    /// Set when the user chose "Record my first message" at the end of
+    /// onboarding; RootView opens the create sheet right after the swap.
+    var pendingFirstCreate = false
+
     init() {
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Self.onboardedKey)
     }

@@ -7,17 +7,21 @@
 
 import Foundation
 
-enum NetworkError: Error {
+enum NetworkError: Error, LocalizedError {
     case urlParsing
     case badResponse
     case unauthorized
-    case deviceInvalidated
     case clientError
     case serverError
     case dateDecoding
     case payment
     case conflict
     case unknown
+
+    // LocalizedError: makes `error.localizedDescription` show these strings
+    // even through an `any Error` (the default otherwise is Foundation's
+    // generic "operation couldn't be completed").
+    var errorDescription: String? { localizedDescription }
 
     var localizedDescription: String {
         switch self {
@@ -27,8 +31,6 @@ enum NetworkError: Error {
             return "Received an invalid response from the server."
         case .unauthorized:
             return "Your session has expired. Please sign in again."
-        case .deviceInvalidated:
-            return "This device is no longer authorized. Please sign in again."
         case .clientError:
             return "A client-side error occurred. Please try again."
         case .serverError:
@@ -47,7 +49,7 @@ enum NetworkError: Error {
     /// Errors the app treats as "session ended - navigate the user out" rather
     /// than surfacing to the current screen.
     var isSessionEnded: Bool {
-        self == .unauthorized || self == .deviceInvalidated
+        self == .unauthorized
     }
 }
 

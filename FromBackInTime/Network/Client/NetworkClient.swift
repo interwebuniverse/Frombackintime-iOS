@@ -15,11 +15,22 @@ class NetworkClient: NetworkClientType {
     }
     
     func request<T: Decodable>(_ request: Request) async throws -> T {
+        do {
+            return try await perform(request)
+        } catch NetworkError.unauthorized where request.needAuth {
+            // Access token expired: refresh once and retry. The retry rebuilds
+            // headers from the Keychain, so it picks up the new token.
+            try await SessionRefresher.shared.refresh(using: self)
+            return try await perform(request)
+        }
+    }
+
+    private func perform<T: Decodable>(_ request: Request) async throws -> T {
         let urlRequest = try request.urlRequest()
         let (data, response) = try await session.data(for: urlRequest)
-        
+
         NetworkLogger.log(request: urlRequest, data: data, response: response)
-        
+
         return try await validate(
             response: response,
             request: request,
@@ -49,7 +60,7 @@ class NetworkClient: NetworkClientType {
         try await validate(response: response)
         return
     }
-    
+
     func uploadMultipart<T: Decodable>(
         request: MultipartRequest
     ) async throws -> T {
@@ -63,15 +74,12 @@ class NetworkClient: NetworkClientType {
             "\(body.count)",
             forHTTPHeaderField: "Content-Length"
         )
-        
+
         let (data, response) = try await session
             .upload(for: urlRequest, from: body)
-        
+
         NetworkLogger.log(request: urlRequest, data: nil, response: response)
-        
-        var logRequest = urlRequest
-        logRequest.httpBody = nil
-        
+
         try await validate(response: response)
         return try decode(and: data)
     }

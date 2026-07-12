@@ -29,9 +29,9 @@ extension Request {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method.rawValue
         if let httpBody {
-            let encoder = JSONEncoder.dateEncoder
-            let data = try? encoder.encode(httpBody)
-            urlRequest.httpBody = data
+            // Let an encode failure throw rather than quietly sending a bodyless
+            // request the server would reject with a confusing 400.
+            urlRequest.httpBody = try JSONEncoder.dateEncoder.encode(httpBody)
         }
         urlRequest.allHTTPHeaderFields = headers
         return urlRequest

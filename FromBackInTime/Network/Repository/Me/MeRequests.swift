@@ -19,6 +19,7 @@ enum MeRequests {
         struct Body: Encodable {
             let name: String?
             let timezone: String?
+            let notifPrefs: [String: Bool]?
         }
     }
 

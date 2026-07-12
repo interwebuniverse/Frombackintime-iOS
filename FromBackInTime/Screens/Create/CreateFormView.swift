@@ -20,6 +20,14 @@ struct CreateFormView: View {
     @State private var occasion: String = ""
     @State private var deliveryDate: Date = Calendar.current.date(byAdding: .month, value: 6, to: .now) ?? .now
     @State private var goToComposer: Bool = false
+    @State private var showAddPerson = false
+
+    /// Delivery must land in the future; the backend rejects a past/today date.
+    /// Start of tomorrow is the earliest the picker allows.
+    private var earliestDelivery: Date {
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
+        return Calendar.current.startOfDay(for: tomorrow)
+    }
 
     init(kind: MessageKind, medium: MessageMedium, prefilledRecipient: Recipient? = nil) {
         self.kind = kind
@@ -60,7 +68,7 @@ struct CreateFormView: View {
 
                 if kind == .standard {
                     section(title: "Date of delivery") {
-                        DatePicker("", selection: $deliveryDate, in: Date()..., displayedComponents: .date)
+                        DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: .date)
                             .labelsHidden()
                             .datePickerStyle(.graphical)
                             .padding(AppSpacing.md)
@@ -81,6 +89,11 @@ struct CreateFormView: View {
                 composer(for: recipient)
             }
         }
+        .sheet(isPresented: $showAddPerson) {
+            AddPersonView()
+                .presentationDetents([.medium, .large])
+                .presentationCornerRadius(28)
+        }
     }
 
     @ViewBuilder
@@ -100,15 +113,14 @@ struct CreateFormView: View {
 
     private var kindHeader: some View {
         HStack(spacing: AppSpacing.sm) {
-            Image(systemName: kind == .ctm ? "shield.lefthalf.filled" : "paperplane.fill")
-                .foregroundStyle(kind == .ctm ? AppShellTheme.gold : AppShellTheme.accent)
+            AppIcon(name: kind == .ctm ? "app-ic-shield" : "app-ic-send", size: 15,
+                    color: kind == .ctm ? AppShellTheme.gold : AppShellTheme.accent)
             Text(kind == .ctm ? "Critical Timed Message" : "Timed message")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppShellTheme.subtitle)
             Text("·")
                 .foregroundStyle(AppShellTheme.subtitle.opacity(0.6))
-            Image(systemName: medium.icon)
-                .foregroundStyle(Color(hue: medium.hue, saturation: 0.7, brightness: 0.6))
+            AppIcon(name: medium.glyph, size: 15, color: Color(hue: medium.hue, saturation: 0.7, brightness: 0.6))
             Text(medium.shortLabel)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppShellTheme.subtitle)
@@ -126,7 +138,34 @@ struct CreateFormView: View {
         }
     }
 
+    @ViewBuilder
     private var recipientPicker: some View {
+        if store.recipients.isEmpty {
+            Button {
+                Haptics.selection()
+                showAddPerson = true
+            } label: {
+                HStack(spacing: AppSpacing.sm) {
+                    AppIcon(name: "app-ic-plus", size: 20, color: AppShellTheme.accent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Add someone first")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppShellTheme.title)
+                        Text("Every message is for a person. Add one to begin.")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(AppShellTheme.subtitle)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(AppSpacing.md)
+                .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md)
+                        .strokeBorder(AppShellTheme.accent.opacity(0.35), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        } else {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.md) {
                 ForEach(store.recipients) { r in
@@ -155,14 +194,14 @@ struct CreateFormView: View {
             }
             .padding(.horizontal, 2)
         }
+        }
     }
 
     private var ctmExplainer: some View {
         AppCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .foregroundStyle(AppShellTheme.gold)
+                    AppIcon(name: "app-ic-shield", size: 16, color: AppShellTheme.gold)
                     Text("How a CTM works")
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(AppShellTheme.title)
@@ -181,7 +220,7 @@ struct CreateFormView: View {
             goToComposer = true
         } label: {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: medium.icon)
+                AppIcon(name: medium.glyph, size: 17, color: .white)
                 Text(continueTitle)
                     .font(.system(size: 16, weight: .bold, design: .rounded))
             }

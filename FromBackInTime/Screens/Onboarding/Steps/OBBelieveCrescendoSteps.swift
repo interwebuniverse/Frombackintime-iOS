@@ -2,13 +2,12 @@
 //  OBBelieveCrescendoSteps.swift
 //  FromBackInTime
 //
-//  Act 7 (social proof, comparison, preferences) and Act 8 (loader,
-//  crescendo, plan reveal).
+//  Act 6 (social proof, preferences) and Act 7 (loader, plan reveal).
 //
 
 import SwiftUI
 
-// MARK: - Act 7: social proof
+// MARK: - Act 6: social proof
 
 struct OBSocialProofView: View {
     @Environment(OnboardingState.self) private var state
@@ -115,69 +114,7 @@ struct OBSocialProofView: View {
     }
 }
 
-// MARK: - Act 7: comparison
-
-struct OBComparisonView: View {
-    @Environment(OnboardingState.self) private var state
-
-    private let rows: [(icon: String, q: String, a: String)] = [
-        ("ob-pen-nib", "Handwrite a letter?", "It can be lost, damaged, or never found."),
-        ("ob-gavel", "Leave it in a will?", "A will is read once, by a lawyer. Your message deserves more."),
-        ("ob-chats", "Just tell them now?", "Some things are heavier today than they'll be later. We hold them for you.")
-    ]
-
-    var body: some View {
-        ZStack {
-            GeometryReader { proxy in
-                Image("ob-sky-authority")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                        OBTitle(text: "Why not just...", subtitle: "The honest answer to the obvious alternatives.")
-
-                        VStack(spacing: AppSpacing.md) {
-                            ForEach(rows, id: \.q) { row in
-                                HStack(alignment: .top, spacing: AppSpacing.lg) {
-                                    OBIcon(name: row.icon, size: 26)
-                                        .foregroundStyle(OnboardingTheme.accent)
-                                        .frame(width: 48, height: 48)
-                                        .background(OnboardingTheme.accent.opacity(0.10), in: .circle)
-                                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                                        Text(row.q)
-                                            .appFont(.heading5)
-                                            .foregroundStyle(OnboardingTheme.title)
-                                        Text(row.a)
-                                            .appFont(.bodyM)
-                                            .foregroundStyle(OnboardingTheme.title.opacity(0.6))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(AppSpacing.lg)
-                                .background(OnboardingTheme.card, in: .rect(cornerRadius: OnboardingTheme.cardCornerRadius))
-                                .shadow(color: .black.opacity(0.07), radius: 12, x: 0, y: 5)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, OnboardingTheme.screenPadding)
-                    .padding(.top, AppSpacing.lg)
-                }
-                .scrollIndicators(.hidden)
-
-                OBBottomBar(title: "Continue") { state.advance(from: .comparison) }
-            }
-        }
-    }
-}
-
-// MARK: - Act 7: preferences
+// MARK: - Act 6: preferences
 
 struct OBPreferencesView: View {
     @Environment(OnboardingState.self) private var state
@@ -229,7 +166,7 @@ struct OBPreferencesView: View {
     }
 }
 
-// MARK: - Act 8: personalization loader
+// MARK: - Act 7: personalization loader
 
 struct OBLoaderView: View {
     @Environment(OnboardingState.self) private var state
@@ -315,52 +252,7 @@ struct OBLoaderView: View {
     }
 }
 
-// MARK: - Act 8: crescendo
-
-struct OBCrescendoView: View {
-    @Environment(OnboardingState.self) private var state
-
-    private static let skyBottom = Color(red: 156/255, green: 193/255, blue: 222/255)
-    @State private var showButton = false
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            GeometryReader { proxy in
-                Image("ob-sky-crescendo")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [.clear, Self.skyBottom.opacity(0.5), Self.skyBottom.opacity(0.95)],
-                startPoint: .center, endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                Spacer()
-                OBTypingText(text: "Some words shouldn't have to wait.", size: 44, charInterval: 0.04, highlight: "have to wait.")
-                Spacer()
-                Button("Begin my vault") { state.advance(from: .crescendo) }
-                    .primaryButton()
-                    .opacity(showButton ? 1 : 0)
-            }
-            .padding(.horizontal, OnboardingTheme.screenPadding)
-            .padding(.bottom, OnboardingTheme.bottomPadding)
-        }
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                withAnimation(.easeOut(duration: 0.4)) { showButton = true }
-            }
-        }
-    }
-}
-
-// MARK: - Act 8: plan reveal
+// MARK: - Act 7: plan reveal
 
 struct OBPlanRevealView: View {
     @Environment(OnboardingState.self) private var state

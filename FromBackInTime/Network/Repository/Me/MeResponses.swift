@@ -11,6 +11,7 @@ enum MeResponses {
         var email: String?
         var name: String?
         var timezone: String?
+        var notifPrefs: [String: Bool]?
         var createdAt: String?
     }
 }

@@ -16,7 +16,14 @@ final class MockAppStore {
     var recipients: [Recipient] = []
     var messages: [Message] = []
     var isLoading = false
+    /// True once the first load attempt has finished (success or failure), so
+    /// screens can tell "still loading for the first time" from "loaded, empty".
+    var hasLoaded = false
     var error: String?
+
+    /// The very first load, before any data has arrived: show a spinner, not an
+    /// empty state that would wrongly read as "you have nothing".
+    var isInitialLoading: Bool { isLoading && !hasLoaded }
     /// The access code returned once when a CTM is armed. The owner shares it
     /// with the recipient out of band; surfaced once, never retrievable again.
     var lastAccessCode: String?
@@ -68,7 +75,7 @@ final class MockAppStore {
         guard !isMock else { return }
         isLoading = true
         error = nil
-        defer { isLoading = false }
+        defer { isLoading = false; hasLoaded = true }
         do {
             async let recips = recipientRepository.list()
             async let msgs = messageRepository.list(kind: nil)
@@ -82,10 +89,11 @@ final class MockAppStore {
 
     // MARK: - Recipients
 
-    func addRecipient(name: String, relationship: String, email: String = "") async {
+    @discardableResult
+    func addRecipient(name: String, relationship: String, email: String = "") async -> Bool {
         if isMock {
             recipients.append(Recipient(name: name, relationship: relationship, email: email, hue: nextHue()))
-            return
+            return true
         }
         do {
             let dto = try await recipientRepository.create(
@@ -95,9 +103,51 @@ final class MockAppStore {
                 hue: nextHue()
             )
             recipients.insert(Recipient(dto: dto), at: 0)
+            return true
         } catch {
             setError(error)
+            return false
         }
+    }
+
+    @discardableResult
+    func updateRecipient(id: String, name: String, relationship: String, email: String) async -> Bool {
+        guard let idx = recipients.firstIndex(where: { $0.id == id }) else { return false }
+        if isMock {
+            recipients[idx].name = name
+            recipients[idx].relationship = relationship
+            recipients[idx].email = email
+            return true
+        }
+        do {
+            let dto = try await recipientRepository.update(
+                id: id,
+                name: name,
+                relationship: relationship.isEmpty ? nil : relationship,
+                email: email,
+                hue: nil
+            )
+            recipients[idx] = Recipient(dto: dto)
+            return true
+        } catch {
+            setError(error)
+            return false
+        }
+    }
+
+    /// Delete a recipient. The backend refuses (409) while they still have
+    /// armed or scheduled messages, which comes back as `error`.
+    @discardableResult
+    func deleteRecipient(id: String) async -> Bool {
+        if !isMock {
+            do { try await recipientRepository.delete(id: id) }
+            catch { setError(error); return false }
+        }
+        recipients.removeAll(where: { $0.id == id })
+        // Drop the recipient's messages too so the mock lists don't keep showing
+        // now-orphaned rows as "Unknown" (the live path is guarded server-side).
+        messages.removeAll(where: { $0.recipientID == id })
+        return true
     }
 
     func recipient(id: String) -> Recipient? {
@@ -135,14 +185,22 @@ final class MockAppStore {
     /// video/voice/photo; when present it is uploaded to R2 and the message is
     /// finalized. Text standard messages finalize immediately (which schedules
     /// them). CTM messages stay draft until armed via `toggleCTMActivation`.
-    func saveMessage(_ message: Message, mediaData: Data? = nil) async {
+    @discardableResult
+    func saveMessage(_ message: Message, mediaData: Data? = nil, mediaContentType: String? = nil) async -> Bool {
         if isMock {
             if let idx = messages.firstIndex(where: { $0.id == message.id }) {
                 messages[idx] = message
             } else {
                 messages.insert(message, at: 0)
             }
-            return
+            return true
+        }
+        // A video/voice/photo message with no bytes must never be created: it
+        // would finalize into a message that can never deliver. Fail loudly so
+        // the composer surfaces it instead of faking a successful save.
+        if message.medium.needsMedia, (mediaData?.isEmpty ?? true) {
+            error = "That message has no media to send. Please record it again."
+            return false
         }
         do {
             let created = try await messageRepository.create(
@@ -154,69 +212,156 @@ final class MockAppStore {
                 durationSeconds: message.durationSeconds,
                 deliverAt: message.deliveryDate.map(APIDate.string)
             )
-            guard let id = created.id else { return }
+            guard let id = created.id else { throw NetworkError.badResponse }
 
-            var finalDto = created
-            if message.medium.needsMedia {
-                if let data = mediaData {
-                    let upload = try await messageRepository.requestUploadURL(id: id, contentType: message.medium.uploadContentType)
-                    if let url = upload.uploadUrl {
-                        try await messageRepository.uploadMedia(to: url, data: data, contentType: message.medium.uploadContentType)
-                        finalDto = try await messageRepository.finalize(id: id)
-                    }
+            do {
+                var finalDto = created
+                if message.medium.needsMedia, let data = mediaData {
+                    let contentType = mediaContentType ?? message.medium.uploadContentType
+                    let upload = try await messageRepository.requestUploadURL(id: id, contentType: contentType)
+                    guard let url = upload.uploadUrl else { throw NetworkError.badResponse }
+                    try await messageRepository.uploadMedia(to: url, data: data, contentType: contentType)
+                    finalDto = try await messageRepository.finalize(id: id)
+                } else if !message.medium.needsMedia, message.kind == .standard {
+                    finalDto = try await messageRepository.finalize(id: id)
                 }
-                // No bytes captured yet: the draft still appears in lists.
-            } else if message.kind == .standard {
-                finalDto = try await messageRepository.finalize(id: id)
+                // needsMedia without bytes: the draft stays (composer prevents
+                // this in practice; CTMs finalize/arm later).
+                messages.insert(Message(dto: finalDto), at: 0)
+                return true
+            } catch {
+                // Roll the draft back so a failed save never leaves a ghost
+                // message that would silently never deliver.
+                try? await messageRepository.delete(id: id)
+                throw error
             }
-            messages.insert(Message(dto: finalDto), at: 0)
         } catch {
             setError(error)
+            return false
         }
     }
 
-    func deleteMessage(id: String) async {
+    /// Edit a scheduled message's occasion, recipient, or delivery date. The
+    /// media itself can't change; to replace it the user re-records.
+    @discardableResult
+    func updateMessage(id: String, occasion: String, recipientId: String, deliveryDate: Date?) async -> Bool {
+        guard let idx = messages.firstIndex(where: { $0.id == id }) else { return false }
+        if isMock {
+            messages[idx].occasion = occasion
+            messages[idx].recipientID = recipientId
+            messages[idx].deliveryDate = deliveryDate
+            return true
+        }
+        do {
+            let dto = try await messageRepository.patch(
+                id: id,
+                occasion: occasion.isEmpty ? nil : occasion,
+                recipientId: recipientId,
+                deliverAt: deliveryDate.map(APIDate.string)
+            )
+            messages[idx] = Message(dto: dto)
+            return true
+        } catch {
+            setError(error)
+            return false
+        }
+    }
+
+    /// Fetch the full message: decrypted body text plus a short-lived playback
+    /// URL for its media. Also refreshes the row in the loaded list.
+    func messageDetail(id: String) async -> (message: Message, mediaURL: URL?)? {
+        if isMock {
+            guard let msg = messages.first(where: { $0.id == id }) else { return nil }
+            return (msg, nil)
+        }
+        do {
+            let dto = try await messageRepository.detail(id: id)
+            let msg = Message(dto: dto)
+            if let idx = messages.firstIndex(where: { $0.id == id }) {
+                messages[idx] = msg
+            }
+            let url = dto.media?.url.flatMap(URL.init(string:))
+            return (msg, url)
+        } catch {
+            setError(error)
+            return nil
+        }
+    }
+
+    @discardableResult
+    func deleteMessage(id: String) async -> Bool {
         if !isMock {
             do { try await messageRepository.delete(id: id) }
-            catch { setError(error); return }
+            catch { setError(error); return false }
         }
         messages.removeAll(where: { $0.id == id })
+        return true
     }
 
     /// Arm a CTM switch. The backend has no "un-arm", so toggling an already
     /// armed switch off is a no-op there (delete the message to cancel it).
-    func toggleCTMActivation(id: String) async {
-        guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
+    @discardableResult
+    func toggleCTMActivation(id: String) async -> Bool {
+        guard let idx = messages.firstIndex(where: { $0.id == id }) else { return false }
         if isMock {
             messages[idx].ctmActivated.toggle()
             if messages[idx].ctmActivated, messages[idx].deliveryDate == nil {
                 messages[idx].deliveryDate = Calendar.current.date(byAdding: .day, value: 30, to: .now)
             }
-            return
+            return true
         }
-        guard !messages[idx].ctmActivated else { return }
+        guard !messages[idx].ctmActivated else { return true }
         do {
             let activation = try await ctmRepository.activate(messageId: id, checkinIntervalDays: nil, releaseThreshold: nil)
             messages[idx].ctmActivated = true
             messages[idx].deliveryDate = APIDate.parse(activation.nextCheckinAt)
             lastAccessCode = activation.accessCode
+            return true
         } catch {
             setError(error)
+            return false
         }
     }
 
     // MARK: - CTM check-ins (the "I'm alive" controls)
 
-    func checkIn() async {
-        guard !isMock else { return }
-        do { _ = try await ctmRepository.checkIn() }
-        catch { setError(error) }
+    /// True when any armed switch exists, i.e. the user has check-ins to keep.
+    var hasArmedCTM: Bool {
+        messages.contains { $0.kind == .ctm && $0.ctmActivated }
     }
 
-    func snooze() async {
-        guard !isMock else { return }
-        do { _ = try await ctmRepository.snooze() }
-        catch { setError(error) }
+    /// The soonest projected release across armed switches.
+    var nextCTMDate: Date? {
+        messages
+            .filter { $0.kind == .ctm && $0.ctmActivated }
+            .compactMap(\.deliveryDate)
+            .min()
+    }
+
+    @discardableResult
+    func checkIn() async -> Bool {
+        if isMock {
+            bumpMockCTMDates(byDays: 30)
+            return true
+        }
+        do { _ = try await ctmRepository.checkIn(); await load(); return true }
+        catch { setError(error); return false }
+    }
+
+    @discardableResult
+    func snooze() async -> Bool {
+        if isMock {
+            bumpMockCTMDates(byDays: 7)
+            return true
+        }
+        do { _ = try await ctmRepository.snooze(); await load(); return true }
+        catch { setError(error); return false }
+    }
+
+    private func bumpMockCTMDates(byDays days: Int) {
+        for idx in messages.indices where messages[idx].kind == .ctm && messages[idx].ctmActivated {
+            messages[idx].deliveryDate = Calendar.current.date(byAdding: .day, value: days, to: .now)
+        }
     }
 
     /// Reload from the backend. In mock, re-seed (used by Settings -> Delete).

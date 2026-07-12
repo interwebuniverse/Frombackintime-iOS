@@ -30,34 +30,48 @@ struct LibraryView: View {
 
     var body: some View {
         AppScreen(title: "Library") {
+            if store.isInitialLoading {
+                LoadingStateView(message: "Loading your messages\u{2026}")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                    AppSearchField(text: $query, prompt: "Search messages")
                     filterBar
-                    if filter != .standard, !ctms.isEmpty {
-                        section(
-                            title: "Critical Timed Messages",
-                            icon: "shield.lefthalf.filled",
-                            tint: AppShellTheme.gold,
-                            items: ctms
-                        )
-                    }
-                    if filter != .ctm, !standards.isEmpty {
-                        section(
-                            title: "Standard Messages",
-                            icon: "paperplane.fill",
-                            tint: AppShellTheme.accent,
-                            items: standards
-                        )
-                    }
-                    if ctms.isEmpty && standards.isEmpty {
-                        EmptyStateView(
-                            icon: query.isEmpty ? "tray.full" : "magnifyingglass",
-                            title: query.isEmpty ? "Your library is empty" : "No matches",
-                            message: query.isEmpty
-                                ? "Every message you record shows up here, with who it's for and when it sends."
-                                : "Try a different name, occasion, or word."
-                        )
+                    if let error = store.error, ctms.isEmpty, standards.isEmpty, query.isEmpty {
+                        LoadErrorView(message: error) {
+                            Haptics.selection()
+                            store.error = nil
+                            Task { await store.load() }
+                        }
                         .padding(.top, AppSpacing.xxxxl)
+                    } else {
+                        if filter != .standard, !ctms.isEmpty {
+                            section(
+                                title: "Critical Timed Messages",
+                                icon: "app-ic-shield",
+                                tint: AppShellTheme.gold,
+                                items: ctms
+                            )
+                        }
+                        if filter != .ctm, !standards.isEmpty {
+                            section(
+                                title: "Standard Messages",
+                                icon: "app-ic-send",
+                                tint: AppShellTheme.accent,
+                                items: standards
+                            )
+                        }
+                        if ctms.isEmpty && standards.isEmpty {
+                            EmptyStateView(
+                                icon: query.isEmpty ? "app-ic-inbox" : "app-ic-search",
+                                title: query.isEmpty ? "Your library is empty" : "No matches",
+                                message: query.isEmpty
+                                    ? "Every message you record shows up here, with who it's for and when it sends."
+                                    : "Try a different name, occasion, or word."
+                            )
+                            .padding(.top, AppSpacing.xxxxl)
+                        }
                     }
                 }
                 .padding(.horizontal, AppShellTheme.screenPadding)
@@ -66,10 +80,11 @@ struct LibraryView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.78), value: filter)
                 .animation(.easeOut(duration: 0.2), value: query)
             }
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search messages")
+            .refreshable { await store.load() }
             .navigationDestination(for: Message.self) { msg in
                 MessageDetailView(message: msg)
                     .navigationTransition(.zoom(sourceID: msg.id, in: ns))
+            }
             }
         }
     }
@@ -103,15 +118,13 @@ struct LibraryView: View {
     private func section(title: String, icon: String, tint: Color, items: [Message]) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(tint)
+                AppIcon(name: icon, size: 17, color: tint)
                 Text(title)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(AppShellTheme.title)
                 Text("\(items.count)")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppShellTheme.subtitle)
+                    .foregroundStyle(AppShellTheme.faint)
                     .contentTransition(.numericText(value: Double(items.count)))
             }
             VStack(spacing: AppSpacing.md) {

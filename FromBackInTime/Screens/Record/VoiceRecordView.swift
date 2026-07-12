@@ -7,11 +7,13 @@
 //  waveform replaces the camera preview so it reads as voice, not video.
 //
 
+import AVFoundation
 import SwiftUI
 
 struct VoiceRecordView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MockAppStore.self) private var store
+    @Environment(AuthStore.self) private var authStore
 
     let recipient: Recipient
     let kind: MessageKind
@@ -23,6 +25,10 @@ struct VoiceRecordView: View {
     @State private var phase: CGFloat = 0
     @State private var ticker: Timer?
     @State private var recorder = AudioRecorder()
+    @State private var isSaving = false
+    @State private var saveError: String?
+    @State private var showSignIn = false
+    @State private var deniedPermission: MediaPermission.Kind?
 
     enum RecState { case idle, recording, recorded }
 
@@ -44,7 +50,22 @@ struct VoiceRecordView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarHidden(true)
-        .onDisappear { ticker?.invalidate() }
+        .onDisappear {
+            ticker?.invalidate()
+            if state == .recording { recorder.stop() }
+            recorder.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in
+            handleInterruption(note)
+        }
+        .permissionAlert($deniedPermission)
+        .savingOverlay(isSaving, message: "Sealing your voice note\u{2026}", detail: "Just a moment.")
+        .saveGating(
+            showSignIn: $showSignIn,
+            error: $saveError,
+            signInSubtitle: "Sign in to seal this voice note and schedule its delivery.",
+            retry: save
+        )
     }
 
     // MARK: - Backdrop
@@ -120,9 +141,14 @@ struct VoiceRecordView: View {
                     let phaseOffset = Double(i) * 0.32
                     let baseAmp: CGFloat
                     switch state {
-                    case .idle:      baseAmp = 4
-                    case .recording: baseAmp = CGFloat(20 + 28 * abs(sin(t * 4 + phaseOffset)) + 18 * abs(sin(t * 9 + phaseOffset * 1.7)))
-                    case .recorded:  baseAmp = CGFloat(8 + 8 * abs(sin(phaseOffset * 2)))
+                    case .idle:
+                        baseAmp = 4
+                    case .recording:
+                        let fast: Double = abs(sin(t * 4 + phaseOffset))
+                        let slow: Double = abs(sin(t * 9 + phaseOffset * 1.7))
+                        baseAmp = CGFloat(20 + 28 * fast + 18 * slow)
+                    case .recorded:
+                        baseAmp = CGFloat(8 + 8 * abs(sin(phaseOffset * 2)))
                     }
                     let x = (CGFloat(i) + 0.5) * (size.width / CGFloat(bars))
                     let rect = CGRect(
@@ -172,7 +198,7 @@ struct VoiceRecordView: View {
                     .buttonStyle(.plain)
 
                     Button(action: save) {
-                        Text("Save")
+                        Text(isSaving ? "Saving\u{2026}" : "Save")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundStyle(AppShellTheme.title)
                             .frame(maxWidth: .infinity)
@@ -180,6 +206,7 @@ struct VoiceRecordView: View {
                             .background(Capsule().fill(.white))
                     }
                     .buttonStyle(.plain)
+                    .disabled(isSaving)
                 }
             } else {
                 Button(action: toggleRecording) {
@@ -203,11 +230,12 @@ struct VoiceRecordView: View {
         switch state {
         case .idle:
             Haptics.feedback(style: .medium)
-            state = .recording
-            elapsed = 0
-            Task { await recorder.start() }
-            ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                Task { @MainActor in elapsed += 1 }
+            Task {
+                guard await MediaPermission.ensure(.microphone) else {
+                    deniedPermission = .microphone
+                    return
+                }
+                beginRecording()
             }
         case .recording:
             Haptics.feedback(style: .light)
@@ -219,8 +247,45 @@ struct VoiceRecordView: View {
         }
     }
 
+    private func beginRecording() {
+        guard recorder.start() else {
+            saveError = "Couldn't start recording. Please try again."
+            return
+        }
+        elapsed = 0
+        state = .recording
+        ticker?.invalidate()
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in elapsed += 1 }
+        }
+    }
+
+    // A call or Siri taking over the mic mid-record: stop cleanly and drop back
+    // to idle rather than counting a timer over a recording that has stopped.
+    private func handleInterruption(_ note: Notification) {
+        guard state == .recording,
+              let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              AVAudioSession.InterruptionType(rawValue: raw) == .began else { return }
+        ticker?.invalidate()
+        recorder.stop()
+        state = .idle
+        elapsed = 0
+        saveError = "Recording was interrupted. Please record again."
+    }
+
     private func save() {
-        Haptics.notification(type: .success)
+        guard !isSaving else { return }
+        guard !authStore.state.isAnonymous else {
+            showSignIn = true
+            return
+        }
+        guard let data = recorder.data() else {
+            Haptics.notification(type: .error)
+            saveError = "That recording didn't capture any audio. Please record again."
+            state = .idle
+            elapsed = 0
+            return
+        }
         let msg = Message(
             recipientID: recipient.id,
             kind: kind,
@@ -229,10 +294,17 @@ struct VoiceRecordView: View {
             deliveryDate: deliveryDate,
             durationSeconds: max(elapsed, 1)
         )
-        let data = recorder.data()
+        isSaving = true
         Task {
-            await store.saveMessage(msg, mediaData: data)
-            dismiss()
+            let ok = await store.saveMessage(msg, mediaData: data)
+            isSaving = false
+            if ok {
+                Haptics.notification(type: .success)
+                dismiss()
+            } else {
+                Haptics.notification(type: .error)
+                saveError = store.error ?? "Something went wrong. Please try again."
+            }
         }
     }
 }

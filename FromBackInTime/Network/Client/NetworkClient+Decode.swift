@@ -17,9 +17,11 @@ extension NetworkClient {
         do {
             return try decoder.decode(type, from: data)
         } catch {
+            #if DEBUG
             print(
                 "🛠️ Failed to decode response! 🔍 Error details: \(error.decodingMessage)"
             )
+            #endif
             throw error
         }
     }

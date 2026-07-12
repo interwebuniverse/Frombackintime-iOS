@@ -29,7 +29,7 @@ struct IconPageView: View {
 
                 section(
                     title: "Critical Timed Messages",
-                    icon: "shield.lefthalf.filled",
+                    icon: "app-ic-shield",
                     tint: AppShellTheme.gold,
                     items: ctms,
                     emptyText: "No CTM for \(recipient.name) yet."
@@ -37,7 +37,7 @@ struct IconPageView: View {
 
                 section(
                     title: "Standard Messages",
-                    icon: "paperplane.fill",
+                    icon: "app-ic-send",
                     tint: AppShellTheme.accent,
                     items: standards,
                     emptyText: "Nothing scheduled for \(recipient.name) yet."
@@ -51,6 +51,7 @@ struct IconPageView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle(recipient.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
         .sheet(isPresented: $showCreate) {
             CreateView(initialRecipient: recipient, initialKind: pendingKind)
                 .presentationCornerRadius(28)
@@ -89,7 +90,7 @@ struct IconPageView: View {
                 pendingKind = .standard
                 showCreate = true
             } label: {
-                actionLabel(icon: "paperplane.fill", title: "New message", tint: AppShellTheme.accent)
+                actionLabel(icon: "app-ic-send", title: "New message", tint: AppShellTheme.accent)
             }
             .buttonStyle(.plain)
 
@@ -98,7 +99,7 @@ struct IconPageView: View {
                 pendingKind = .ctm
                 showCreate = true
             } label: {
-                actionLabel(icon: "shield.lefthalf.filled", title: "New CTM", tint: AppShellTheme.gold)
+                actionLabel(icon: "app-ic-shield", title: "New CTM", tint: AppShellTheme.gold)
             }
             .buttonStyle(.plain)
         }
@@ -106,9 +107,7 @@ struct IconPageView: View {
 
     private func actionLabel(icon: String, title: String, tint: Color) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(tint)
+            AppIcon(name: icon, size: 18, color: tint)
             Text(title)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppShellTheme.title)
@@ -123,9 +122,7 @@ struct IconPageView: View {
     private func section(title: String, icon: String, tint: Color, items: [Message], emptyText: String) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(tint)
+                AppIcon(name: icon, size: 17, color: tint)
                 Text(title)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(AppShellTheme.title)
@@ -159,20 +156,18 @@ struct IconPageView: View {
 }
 
 struct CTMRow: View {
-    @Environment(MockAppStore.self) private var store
     let message: Message
 
     var body: some View {
         AppCard(padding: AppSpacing.lg) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .foregroundStyle(AppShellTheme.gold)
+                    AppIcon(name: "app-ic-shield", size: 16, color: AppShellTheme.gold)
                     Text(message.occasion)
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundStyle(AppShellTheme.title)
                     Spacer()
-                    Text(message.ctmActivated ? "Activated" : "Not activated")
+                    Text(message.ctmActivated ? "Armed" : "Not armed")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
@@ -186,21 +181,13 @@ struct CTMRow: View {
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppShellTheme.accent)
                 }
-                Button {
-                    Haptics.feedback(style: .medium)
-                    Task { await store.toggleCTMActivation(id: message.id) }
-                } label: {
-                    Text(message.ctmActivated ? "Deactivate" : "Activate CTM")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppRadius.md)
-                                .fill(message.ctmActivated ? AppShellTheme.subtitle : AppShellTheme.gold)
-                        )
+                HStack(spacing: 4) {
+                    Text(message.ctmActivated ? "Open to review or cancel" : "Open to arm this switch")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppShellTheme.subtitle)
+                    AppIcon(name: "app-ic-chevron", size: 12, color: AppShellTheme.faint)
                 }
-                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
         }
     }

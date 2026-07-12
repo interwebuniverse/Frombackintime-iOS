@@ -21,6 +21,15 @@ enum MessageResponses {
         var createdAt: String?
         // Present only on the single-message detail response.
         var bodyText: String?
+        /// Short-lived presigned playback URL, set on owner detail reads once
+        /// the media is confirmed in R2.
+        var media: Media?
+    }
+
+    struct Media: Codable, Hashable {
+        var url: String?
+        var contentType: String?
+        var expiresIn: Int?
     }
 
     struct UploadURL: Codable {

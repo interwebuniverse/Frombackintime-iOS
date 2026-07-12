@@ -14,16 +14,20 @@ enum NetworkLogger {
         data: Data?,
         response: URLResponse?
     ) {
+        // Logging is DEBUG-only: on Release this whole body is compiled out so a
+        // shipped build never prints bearer tokens, session cookies, or decrypted
+        // message bodies / one-time CTM access codes to the device console.
+        #if DEBUG
         let emptyMessage = "❌ IS EMPTY"
-        
+
         let url = (
             request?.url?.absoluteString ?? url?.absoluteString
         ) ?? emptyMessage
         let method = request?.httpMethod ?? emptyMessage
-        let headers = request?.allHTTPHeaderFields ?? [:]
+        let headers = redacted(request?.allHTTPHeaderFields ?? [:])
         let body = request?.httpBody
         let status = (response as? HTTPURLResponse)?.statusCode ?? .zero
-        
+
         print("""
         \n🔍 START LOGGING ----------------------------------
         
@@ -41,8 +45,18 @@ enum NetworkLogger {
         logData(data, title: "📥 Response Data")
 
         print("🛑 END LOGGING ----------------------------------\n")
+        #endif
     }
-    
+
+    /// Masks credential-bearing headers so a debug console dump can't leak a
+    /// live session. Values are replaced, keys kept, so the shape stays readable.
+    private static func redacted(_ headers: [String: String]) -> [String: String] {
+        let sensitive: Set<String> = ["authorization", "apikey", "x-api-key", "cookie", "set-cookie"]
+        return headers.reduce(into: [:]) { result, pair in
+            result[pair.key] = sensitive.contains(pair.key.lowercased()) ? "‹redacted›" : pair.value
+        }
+    }
+
     private static func logData(_ data: Data?, title: String) {
         guard let data,
               let jsonObject = try? JSONSerialization.jsonObject(with: data),

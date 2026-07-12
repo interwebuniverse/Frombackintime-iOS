@@ -7,7 +7,7 @@ import Foundation
 
 protocol MeRepositoryType {
     func profile() async throws -> MeResponses.Profile
-    func update(name: String?, timezone: String?) async throws -> MeResponses.Profile
+    func update(name: String?, timezone: String?, notifPrefs: [String: Bool]?) async throws -> MeResponses.Profile
     func deleteAccount() async throws
 }
 
@@ -23,8 +23,8 @@ final class MeRepository: MeRepositoryType {
         return res.data
     }
 
-    func update(name: String?, timezone: String?) async throws -> MeResponses.Profile {
-        let body = MeRequests.Update.Body(name: name, timezone: timezone)
+    func update(name: String?, timezone: String?, notifPrefs: [String: Bool]?) async throws -> MeResponses.Profile {
+        let body = MeRequests.Update.Body(name: name, timezone: timezone, notifPrefs: notifPrefs)
         let res: BaseResponse<MeResponses.Profile> = try await client.request(MeRequests.Update(body: body))
         return res.data
     }

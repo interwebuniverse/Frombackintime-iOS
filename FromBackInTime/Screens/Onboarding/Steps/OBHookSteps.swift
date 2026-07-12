@@ -2,21 +2,11 @@
 //  OBHookSteps.swift
 //  FromBackInTime
 //
-//  Act 1 (cinematic hook) + Act 2 (personalize). Dark, quiet screens that
+//  Act 1 (cinematic hook) + Act 2 (personalize). Quiet sky screens that
 //  sell the feeling before asking for anything.
 //
 
 import SwiftUI
-
-// MARK: - Cinematic background helper
-
-private extension View {
-    func obCinematic() -> some View {
-        self
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(OnboardingTheme.cinematicBackground.ignoresSafeArea())
-    }
-}
 
 // MARK: - Screen 1: cold open
 
@@ -86,8 +76,20 @@ struct OBHookOpenView: View {
 
                 Spacer()
 
-                Button("Begin") { state.advance(from: .hookOpen) }
-                    .primaryButton()
+                Button("Begin") {
+                    state.isReturningUser = false
+                    state.advance(from: .hookOpen)
+                }
+                .primaryButton()
+                .opacity(appeared ? 1 : 0)
+
+                // Returning users jump straight to sign-in and skip the story.
+                Button("I already have an account") {
+                    state.isReturningUser = true
+                    state.path.append(.authGate)
+                }
+                .textButton()
+                    .padding(.top, AppSpacing.xs)
                     .opacity(appeared ? 1 : 0)
             }
             .padding(.horizontal, OnboardingTheme.screenPadding)
@@ -147,60 +149,7 @@ struct OBHookQuestionView: View {
     }
 }
 
-// MARK: - Screen 3: the promise
-
-struct OBHookPromiseView: View {
-    @Environment(OnboardingState.self) private var state
-
-    private static let skyBottom = Color(red: 198/255, green: 220/255, blue: 238/255)
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            GeometryReader { proxy in
-                Image("ob-sky-promise")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [.clear, Self.skyBottom.opacity(0.5), Self.skyBottom.opacity(0.95)],
-                startPoint: .center, endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            VStack(spacing: 0) {
-                Spacer()
-                VStack(spacing: AppSpacing.md) {
-                    Text("Send what matters.\nTo the people who matter.")
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundStyle(OnboardingTheme.title)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Record now. We'll keep it safe and deliver it exactly when the moment is right.")
-                        .font(.system(size: 17, weight: .medium, design: .rounded))
-                        .foregroundStyle(OnboardingTheme.title.opacity(0.65))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.bottom, AppSpacing.xl)
-
-                Button("Begin") { state.advance(from: .hookPromise) }
-                    .primaryButton()
-                Button("I already have an account") { }
-                    .textButton()
-                    .padding(.top, AppSpacing.xs)
-            }
-            .padding(.horizontal, OnboardingTheme.screenPadding)
-            .padding(.bottom, OnboardingTheme.bottomPadding)
-        }
-    }
-}
-
-// MARK: - Screen 4: name
+// MARK: - Screen 3: name
 
 struct OBNameInputView: View {
     @Environment(OnboardingState.self) private var state
@@ -261,56 +210,6 @@ struct OBNameInputView: View {
                     .primaryButton()
                     .disabled(!canContinue)
                     .opacity(canContinue ? 1 : 0.45)
-            }
-            .padding(.horizontal, OnboardingTheme.screenPadding)
-            .padding(.bottom, OnboardingTheme.bottomPadding)
-        }
-    }
-}
-
-// MARK: - Screen 5: soft welcome
-
-struct OBWelcomeView: View {
-    @Environment(OnboardingState.self) private var state
-
-    private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            GeometryReader { proxy in
-                Image("ob-sky-welcome")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [.clear, Self.skyBottom.opacity(0.5), Self.skyBottom.opacity(0.95)],
-                startPoint: .center, endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            VStack(spacing: 0) {
-                Spacer()
-                VStack(spacing: AppSpacing.md) {
-                    Text("Welcome, \(state.displayName).")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundStyle(OnboardingTheme.title)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Take your time, there's no rush here. From now on, we'll shape everything around you and what matters to you.")
-                        .font(.system(size: 17, weight: .medium, design: .rounded))
-                        .foregroundStyle(OnboardingTheme.title.opacity(0.65))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.bottom, AppSpacing.xl)
-
-                Button("Let's start") { state.advance(from: .welcome) }
-                    .primaryButton()
             }
             .padding(.horizontal, OnboardingTheme.screenPadding)
             .padding(.bottom, OnboardingTheme.bottomPadding)

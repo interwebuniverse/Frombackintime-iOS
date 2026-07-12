@@ -10,5 +10,16 @@
 	<string>FromBackInTime needs the camera to record your video messages.</string>
 	<key>UIAppFonts</key>
 	<array/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.frombackintime.app.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>frombackintime</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

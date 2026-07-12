@@ -24,6 +24,7 @@ protocol MessageRepositoryType {
     func requestUploadURL(id: String, contentType: String) async throws -> MessageResponses.UploadURL
     func uploadMedia(to url: String, data: Data, contentType: String) async throws
     func finalize(id: String) async throws -> MessageResponses.Message
+    func patch(id: String, occasion: String?, recipientId: String?, deliverAt: String?) async throws -> MessageResponses.Message
     func delete(id: String) async throws
 }
 
@@ -79,6 +80,12 @@ final class MessageRepository: MessageRepositoryType {
 
     func finalize(id: String) async throws -> MessageResponses.Message {
         let res: BaseResponse<MessageResponses.Message> = try await client.request(MessageRequests.Finalize(id: id))
+        return res.data
+    }
+
+    func patch(id: String, occasion: String?, recipientId: String?, deliverAt: String?) async throws -> MessageResponses.Message {
+        let body = MessageRequests.Patch.Body(occasion: occasion, recipientId: recipientId, deliverAt: deliverAt)
+        let res: BaseResponse<MessageResponses.Message> = try await client.request(MessageRequests.Patch(id: id, body: body))
         return res.data
     }
 

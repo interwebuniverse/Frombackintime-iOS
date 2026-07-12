@@ -43,7 +43,7 @@ final class DependencyContainer {
     }
 
     func makeAuthStore() -> AuthStore {
-        AuthStore(repository: authRepository)
+        AuthStore(repository: authRepository, meRepository: meRepository)
     }
 
     func makeAppStore() -> MockAppStore {

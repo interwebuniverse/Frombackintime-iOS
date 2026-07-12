@@ -5,6 +5,7 @@
 //  Created by Aykhan Safarli on 16.04.26.
 //
 
+import Combine
 import SwiftUI
 
 @main
@@ -43,7 +44,23 @@ struct FromBackInTimeApp: App {
                     // Onboarding-first: establish an anonymous session so every
                     // authed call has a token, then load the user's data.
                     await authStore.ensureSession()
+                    // A returning, signed-in user (e.g. after a reinstall that
+                    // wiped the onboarding flag but kept the Keychain session)
+                    // shouldn't be marched back through onboarding.
+                    if authStore.state.isAuthenticated, !authStore.state.isAnonymous {
+                        appState.completeOnboarding()
+                    }
                     await appStore.bootstrap()
+                    await authStore.loadProfile()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .sessionReplaced)) { _ in
+                    // The signed-in identity changed (sign-in, sign-out, or a
+                    // dead session healed to anonymous): reload user data so
+                    // no screen keeps the previous user's vault.
+                    Task {
+                        await appStore.load()
+                        await authStore.loadProfile()
+                    }
                 }
         }
     }

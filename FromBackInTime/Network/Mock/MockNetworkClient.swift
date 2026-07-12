@@ -51,7 +51,7 @@ final class MockNetworkClient: NetworkClientType {
         logMock(request: request, responseData: responseData)
     }
 
-    func validate(response: URLResponse) async throws {
+    func validate(response: URLResponse, data: Data?) async throws {
         // No-op for mocks.
     }
 

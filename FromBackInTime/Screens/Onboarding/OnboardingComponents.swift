@@ -27,66 +27,6 @@ struct OBIcon: View {
     }
 }
 
-// MARK: - Illustration
-// A real generated illustration. The art is rendered on the app cream so it
-// sits edge-free on the page: no box, no border, no clip. Falls back to the
-// labeled placeholder when the named asset isn't in the catalog yet.
-
-struct OBIllustration: View {
-    let name: String
-    var description: String = ""
-    var height: CGFloat? = nil
-
-    private var exists: Bool { UIImage(named: name) != nil }
-
-    var body: some View {
-        if exists {
-            Image(name)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .frame(height: height)
-        } else {
-            OBImagePlaceholder(description: description, height: height)
-        }
-    }
-}
-
-// MARK: - Image placeholder
-// Every spot where a real AI illustration will live shows this labeled box
-// for now, so the layout and storytelling are reviewable before art exists.
-
-struct OBImagePlaceholder: View {
-    let description: String
-    var height: CGFloat? = nil
-    var cinematic: Bool = false
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: OnboardingTheme.cardCornerRadius)
-            .fill(cinematic ? Color.white.opacity(0.06) : OnboardingTheme.placeholderFill)
-            .overlay(
-                VStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "photo")
-                        .font(.system(size: 22, weight: .regular))
-                    Text(description)
-                        .appFont(.bodyS)
-                        .multilineTextAlignment(.center)
-                }
-                .foregroundStyle(cinematic ? OnboardingTheme.onCinematicSubtitle : OnboardingTheme.placeholderText)
-                .padding(AppSpacing.lg)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: OnboardingTheme.cardCornerRadius)
-                    .strokeBorder(
-                        (cinematic ? Color.white.opacity(0.18) : OnboardingTheme.subtitle.opacity(0.4)),
-                        style: StrokeStyle(lineWidth: 1, dash: [6, 5])
-                    )
-            )
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-    }
-}
-
 // MARK: - Bounce press style
 
 struct OBBounceStyle: ButtonStyle {
@@ -244,6 +184,7 @@ struct OBTypingText: View {
     var highlight: String = ""
 
     @State private var count = 0
+    @State private var timer: Timer?
 
     // The full string is always laid out; characters past `count` are drawn
     // clear. Layout never changes, so the reveal can't jump or reflow.
@@ -268,13 +209,15 @@ struct OBTypingText: View {
             .fixedSize(horizontal: false, vertical: true)
             .contentTransition(.numericText())
             .onAppear(perform: start)
+            .onDisappear { timer?.invalidate(); timer = nil }
     }
 
     private func start() {
+        timer?.invalidate()
         count = 0
         let total = text.count
         let chars = Array(text)
-        Timer.scheduledTimer(withTimeInterval: charInterval, repeats: true) { timer in
+        timer = Timer.scheduledTimer(withTimeInterval: charInterval, repeats: true) { timer in
             guard count < total else {
                 timer.invalidate()
                 onComplete()

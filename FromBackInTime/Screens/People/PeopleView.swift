@@ -12,6 +12,9 @@ struct PeopleView: View {
     @Environment(MockAppStore.self) private var store
     @Namespace private var ns
     @State private var showAddPerson = false
+    @State private var editingPerson: Recipient?
+    @State private var deletingPerson: Recipient?
+    @State private var deleteError: String?
     @State private var query: String = ""
 
     private let columns = [
@@ -30,7 +33,31 @@ struct PeopleView: View {
 
     var body: some View {
         AppScreen(title: "People") {
+            if store.isInitialLoading {
+                LoadingStateView(message: "Loading your people\u{2026}")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
             ScrollView {
+                AppSearchField(text: $query, prompt: "Search people")
+                    .padding(.horizontal, AppShellTheme.screenPadding)
+                    .padding(.bottom, AppSpacing.lg)
+
+                if let error = store.error, store.recipients.isEmpty {
+                    LoadErrorView(message: error) {
+                        Haptics.selection()
+                        store.error = nil
+                        Task { await store.load() }
+                    }
+                    .padding(.horizontal, AppShellTheme.screenPadding)
+                    .padding(.top, AppSpacing.xxxl)
+                } else if !query.isEmpty, filtered.isEmpty {
+                    EmptyStateView(
+                        icon: "app-ic-search",
+                        title: "No matches",
+                        message: "No one by that name or relationship. Try another search."
+                    )
+                    .padding(.top, AppSpacing.xxxl)
+                } else {
                 LazyVGrid(columns: columns, spacing: AppSpacing.xl) {
                     ForEach(filtered) { recipient in
                         NavigationLink(value: recipient) {
@@ -38,6 +65,18 @@ struct PeopleView: View {
                                 .matchedTransitionSource(id: recipient.id, in: ns)
                         }
                         .buttonStyle(.pressableCard)
+                        .contextMenu {
+                            Button {
+                                editingPerson = recipient
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) {
+                                deletingPerson = recipient
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                     if query.isEmpty { addTile }
                 }
@@ -45,8 +84,9 @@ struct PeopleView: View {
                 .padding(.top, AppSpacing.xs)
                 .padding(.bottom, AppSpacing.xxxl)
                 .animation(.spring(response: 0.4, dampingFraction: 0.75), value: filtered)
+                }
             }
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search people")
+            .refreshable { await store.load() }
             .navigationDestination(for: Recipient.self) { recipient in
                 IconPageView(recipient: recipient)
                     .navigationTransition(.zoom(sourceID: recipient.id, in: ns))
@@ -55,6 +95,46 @@ struct PeopleView: View {
                 AddPersonView()
                     .presentationDetents([.medium, .large])
                     .presentationCornerRadius(28)
+            }
+            .sheet(item: $editingPerson) { person in
+                AddPersonView(editing: person)
+                    .presentationDetents([.medium, .large])
+                    .presentationCornerRadius(28)
+            }
+            .alert(
+                "Delete \(deletingPerson?.name ?? "this person")?",
+                isPresented: Binding(
+                    get: { deletingPerson != nil },
+                    set: { if !$0 { deletingPerson = nil } }
+                ),
+                presenting: deletingPerson
+            ) { person in
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) { performDelete(person) }
+            } message: { person in
+                Text("Messages already written to \(person.name) stay in your library.")
+            }
+            .alert("Couldn't delete", isPresented: Binding(
+                get: { deleteError != nil },
+                set: { if !$0 { deleteError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deleteError ?? "")
+            }
+            }
+        }
+    }
+
+    private func performDelete(_ person: Recipient) {
+        Task {
+            if await store.deleteRecipient(id: person.id) {
+                Haptics.notification(type: .success)
+            } else {
+                // Most likely the backend 409: they still have scheduled or
+                // armed messages, which must be canceled first.
+                Haptics.notification(type: .error)
+                deleteError = store.error ?? "Something went wrong. Please try again."
             }
         }
     }
@@ -69,15 +149,8 @@ struct PeopleView: View {
             showAddPerson = true
         } label: {
             VStack(spacing: AppSpacing.sm) {
-                ZStack {
-                    Circle()
-                        .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5]))
-                        .foregroundStyle(AppShellTheme.accent.opacity(0.6))
-                        .frame(width: 56, height: 56)
-                    Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(AppShellTheme.accent)
-                }
+                AppIcon(name: "app-ic-plus", size: 56, color: AppShellTheme.accent)
+                    .frame(width: 56, height: 56)
                 Text("Add")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppShellTheme.title)

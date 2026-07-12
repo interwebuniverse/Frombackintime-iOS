@@ -2,17 +2,20 @@
 //  RecordView.swift
 //  FromBackInTime
 //
-//  Screen 8 (Record). Mock selfie-camera. Tapping the record button starts
-//  a fake timer; tapping again stops. "Save" writes the message into the
-//  store and dismisses the entire create sheet, so the new entry shows up
-//  in Home, Library, and the recipient's icon page immediately.
+//  Screen 8 (Record). Real selfie camera via MoviePicker (falls back to the
+//  photo library on the simulator). Tapping record checks camera + microphone
+//  permission, then presents the camera; the returned clip's bytes and duration
+//  flow into "Save", which uploads to R2 and finalizes the message so it shows
+//  up in Home, Library, and the recipient's icon page immediately.
 //
 
 import SwiftUI
+import UIKit
 
 struct RecordView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(MockAppStore.self) private var store
+    @Environment(AuthStore.self) private var authStore
 
     let recipient: Recipient
     let kind: MessageKind
@@ -24,6 +27,11 @@ struct RecordView: View {
     @State private var ticker: Timer?
     @State private var showCamera = false
     @State private var videoData: Data?
+    @State private var videoContentType = "video/mp4"
+    @State private var isSaving = false
+    @State private var saveError: String?
+    @State private var showSignIn = false
+    @State private var deniedPermission: MediaPermission.Kind?
 
     enum RecState { case idle, recording, recorded }
 
@@ -44,16 +52,25 @@ struct RecordView: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarHidden(true)
         .onDisappear { ticker?.invalidate() }
+        .savingOverlay(isSaving, message: "Sealing your video\u{2026}")
         .fullScreenCover(isPresented: $showCamera) {
-            MoviePicker { data, duration in
+            MoviePicker { data, duration, contentType in
                 if let data {
                     videoData = data
+                    videoContentType = contentType
                     elapsed = duration
                     state = .recorded
                 }
             }
             .ignoresSafeArea()
         }
+        .permissionAlert($deniedPermission)
+        .saveGating(
+            showSignIn: $showSignIn,
+            error: $saveError,
+            signInSubtitle: "Sign in to seal this video and schedule its delivery.",
+            retry: save
+        )
     }
 
     private var background: some View {
@@ -137,7 +154,7 @@ struct RecordView: View {
                     Button {
                         save()
                     } label: {
-                        Text("Save")
+                        Text(isSaving ? "Saving\u{2026}" : "Save")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundStyle(AppShellTheme.title)
                             .frame(maxWidth: .infinity)
@@ -145,6 +162,7 @@ struct RecordView: View {
                             .background(Capsule().fill(.white))
                     }
                     .buttonStyle(.plain)
+                    .disabled(isSaving)
                 }
             } else {
                 Button {
@@ -184,7 +202,23 @@ struct RecordView: View {
         switch state {
         case .idle:
             Haptics.feedback(style: .medium)
-            showCamera = true
+            // No camera on the simulator: MoviePicker falls back to the library,
+            // which needs no camera/mic grant. On device, a video needs both.
+            guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                showCamera = true
+                return
+            }
+            Task {
+                guard await MediaPermission.ensure(.camera) else {
+                    deniedPermission = .camera
+                    return
+                }
+                guard await MediaPermission.ensure(.microphone) else {
+                    deniedPermission = .microphone
+                    return
+                }
+                showCamera = true
+            }
         case .recording:
             Haptics.feedback(style: .light)
             state = .recorded
@@ -195,7 +229,11 @@ struct RecordView: View {
     }
 
     private func save() {
-        Haptics.notification(type: .success)
+        guard !isSaving else { return }
+        guard !authStore.state.isAnonymous else {
+            showSignIn = true
+            return
+        }
         let msg = Message(
             recipientID: recipient.id,
             kind: kind,
@@ -204,10 +242,24 @@ struct RecordView: View {
             deliveryDate: deliveryDate,
             durationSeconds: max(elapsed, 1)
         )
-        let data = videoData
+        guard let data = videoData else {
+            Haptics.notification(type: .error)
+            saveError = "That recording didn't capture any video. Please record again."
+            state = .idle
+            elapsed = 0
+            return
+        }
+        isSaving = true
         Task {
-            await store.saveMessage(msg, mediaData: data)
-            dismiss()
+            let ok = await store.saveMessage(msg, mediaData: data, mediaContentType: videoContentType)
+            isSaving = false
+            if ok {
+                Haptics.notification(type: .success)
+                dismiss()
+            } else {
+                Haptics.notification(type: .error)
+                saveError = store.error ?? "Something went wrong. Please try again."
+            }
         }
     }
 }

@@ -41,9 +41,7 @@ struct MessageRow: View {
                         .padding(.top, 2)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: openIcon)
-                    .font(.system(size: 26))
-                    .foregroundStyle(AppShellTheme.accent.opacity(0.85))
+                AppIcon(name: "app-ic-chevron", size: 15, color: AppShellTheme.faint)
             }
         }
     }
@@ -61,25 +59,15 @@ struct MessageRow: View {
 
     private var mediumBadge: some View {
         let tint = Color(hue: message.medium.hue, saturation: 0.55, brightness: 0.7)
-        return HStack(spacing: 3) {
-            Image(systemName: message.medium.icon)
-                .font(.system(size: 9, weight: .bold))
+        return HStack(spacing: 4) {
+            AppIcon(name: message.medium.glyph, size: 10, color: tint)
             Text(message.medium.shortLabel)
                 .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
         }
-        .foregroundStyle(tint)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
         .background(Capsule().fill(tint.opacity(0.14)))
-    }
-
-    private var openIcon: String {
-        switch message.medium {
-        case .video: return "play.circle.fill"
-        case .voice: return "play.circle.fill"
-        case .photo: return "photo.fill"
-        case .text:  return "text.alignleft"
-        }
     }
 
     private var dateLabel: String {

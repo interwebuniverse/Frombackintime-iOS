@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "ob-d-calendar.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -13,6 +13,7 @@ struct OBFirstActionView: View {
     @Environment(Router.self) private var router
     @Environment(AppState.self) private var appState
     @Environment(OnboardingState.self) private var state
+    @Environment(AuthStore.self) private var authStore
 
     private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
 
@@ -50,9 +51,9 @@ struct OBFirstActionView: View {
                 }
                 .padding(.bottom, AppSpacing.xl)
 
-                Button("Record my first message", action: finish)
+                Button("Record my first message") { finish(startCreate: true) }
                     .primaryButton()
-                Button("Explore the app first", action: finish)
+                Button("Explore the app first") { finish(startCreate: false) }
                     .textButton()
                     .padding(.top, AppSpacing.xs)
             }
@@ -61,9 +62,22 @@ struct OBFirstActionView: View {
         }
     }
 
-    private func finish() {
+    private func finish(startCreate: Bool) {
+        // Persist what onboarding learned to the backend profile. Works for
+        // anonymous sessions too (the app row exists); failures are non-fatal.
+        let name = state.name.trimmingCharacters(in: .whitespaces)
+        let prefs = Dictionary(
+            uniqueKeysWithValues: OnboardingContent.preferenceOptions.map {
+                ($0.id, state.preferences.contains($0.id))
+            }
+        )
+        Task {
+            await authStore.updateProfile(name: name.isEmpty ? nil : name, notifPrefs: prefs)
+        }
+
         router.fullScreenSheet = nil
         router.popToRoot()
+        appState.pendingFirstCreate = startCreate
         appState.completeOnboarding()
     }
 }

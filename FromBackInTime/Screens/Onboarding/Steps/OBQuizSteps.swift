@@ -90,10 +90,7 @@ struct OBEmpathyView: View {
     let content: OBEmpathyContent
     @State private var appeared = false
 
-    private var step: OnboardingStep {
-        // Resolve which empathy step this is by matching content.
-        content.kicker == OnboardingContent.empathyOne.kicker ? .empathyOne : .empathyTwo
-    }
+    private var step: OnboardingStep { .empathyOne }
 
     private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
 

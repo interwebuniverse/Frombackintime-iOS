@@ -60,4 +60,22 @@ enum AuthRequests {
             let nonce: String?
         }
     }
+
+    // Exchange a PKCE auth code (from the hosted OAuth redirect, e.g. Google
+    // via ASWebAuthenticationSession) for a full session.
+    struct ExchangeCode: Request {
+        let authCode: String
+        let codeVerifier: String
+        var fullPath: String? { "\(SupabaseConfig.authBaseURL)/token?grant_type=pkce" }
+        var path: String { "" }
+        var method: RequestMethod { .POST }
+        var needAuth: Bool { false }
+        var headers: [String: String] { SupabaseConfig.authHeaders }
+        var httpBody: Encodable? { Body(auth_code: authCode, code_verifier: codeVerifier) }
+
+        struct Body: Encodable {
+            let auth_code: String
+            let code_verifier: String
+        }
+    }
 }

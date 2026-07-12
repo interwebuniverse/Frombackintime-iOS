@@ -14,21 +14,17 @@ struct OBEmpathyContent {
     let kicker: String
     let title: String
     let body: String
-    let imageDescription: String
     var image: String = ""
 }
 
-struct OBChip: Hashable {
-    let icon: String
-    let label: String
-    var illustration: String = ""   // optional 3D illustration asset
-}
-
-struct OBFeatureContent {
+/// One page of the feature showcase pager. The hero is a large color icon,
+/// the satellites are two smaller icons orbiting it.
+struct OBShowcasePage: Identifiable {
+    let id: String
+    let hero: String
+    let satellites: [String]
     let title: String
     let subtitle: String
-    let imageDescription: String
-    let chips: [OBChip]
 }
 
 struct OBReview: Identifiable {
@@ -109,78 +105,47 @@ enum OnboardingContent {
         )
     ]
 
-    // MARK: - Empathy interstitials
+    // MARK: - Empathy interstitial
 
     static let empathyOne = OBEmpathyContent(
         kicker: "You're not alone in this",
         title: "Almost everyone has someone they think of first.",
         body: "The fact that a face came to mind so quickly means the words are already there. They just need somewhere safe to go.",
-        imageDescription: "Warm, quiet illustration: a single hand holding a small glowing light, soft and reassuring",
         image: "ob-sky-empathy1"
     )
 
-    static let empathyTwo = OBEmpathyContent(
-        kicker: "We hear you",
-        title: "The hardest words are the ones that matter most.",
-        body: "You don't have to find the perfect way to say it today. You only have to say it once. We'll keep it safe until the right moment.",
-        imageDescription: "Soft illustration: an open envelope with gentle light coming out, calm and hopeful",
-        image: "ob-sky-empathy2"
-    )
+    // MARK: - Feature showcase pages
 
-    // MARK: - Features
-
-    static let featureRecord = OBFeatureContent(
-        title: "Speak it the way only you can.",
-        subtitle: "Voice, video, or a photo and a few words. Whatever feels honest.",
-        imageDescription: "App mockup: record screen with a large record button and a 00:12 timer",
-        chips: [OBChip(icon: "ob-microphone", label: "Voice", illustration: "ob-item-voice"),
-                OBChip(icon: "ob-video", label: "Video", illustration: "ob-item-video"),
-                OBChip(icon: "ob-image", label: "Photo + note", illustration: "ob-item-photo")]
-    )
-
-    static let featureSchedule = OBFeatureContent(
-        title: "Pick the moment it should arrive.",
-        subtitle: "Tomorrow, a decade from now, or a birthday you won't be there for.",
-        imageDescription: "App mockup: calendar with one date glowing, date-picker chips below",
-        chips: [OBChip(icon: "ob-calendar", label: "Next month", illustration: "ob-item-month"),
-                OBChip(icon: "ob-calendar", label: "On their 18th", illustration: "ob-item-18th"),
-                OBChip(icon: "ob-clock", label: "5 years", illustration: "ob-item-5y"),
-                OBChip(icon: "ob-calendar", label: "Custom date", illustration: "ob-item-custom")]
-    )
-
-    static let featureSecure = OBFeatureContent(
-        title: "Locked the moment you finish.",
-        subtitle: "Everything is encrypted end to end. Even we can't watch it.",
-        imageDescription: "App mockup: a lock animating closed over a video thumbnail",
-        chips: [OBChip(icon: "ob-lock", label: "End-to-end encrypted", illustration: "ob-item-encrypted"),
-                OBChip(icon: "ob-shield", label: "Private by default", illustration: "ob-item-private")]
-    )
-
-    static let featureDeliver = OBFeatureContent(
-        title: "It arrives gently, on the day you chose.",
-        subtitle: "By email, in the app, or both. Whichever way they're easier to reach.",
-        imageDescription: "App mockup: an arriving message with a soft glow and a delivery confirmation",
-        chips: [OBChip(icon: "ob-envelope", label: "Email", illustration: "ob-item-email"),
-                OBChip(icon: "ob-device", label: "In-app", illustration: "ob-item-inapp"),
-                OBChip(icon: "ob-bell", label: "Both", illustration: "ob-item-both")]
-    )
-
-    static let featureCTM = OBFeatureContent(
-        title: "If you ever can't deliver it yourself, we will.",
-        subtitle: "We send gentle check-ins on your schedule. Confirm with one tap. Miss too many, and your trusted person hears from you anyway.",
-        imageDescription: "App mockup: Critical Timed Message check-in card with 'I'm here', 'Snooze', 'Plan ahead'",
-        chips: [OBChip(icon: "ob-calendar", label: "Gentle check-ins", illustration: "ob-item-checkin"),
-                OBChip(icon: "ob-seal-check", label: "One-tap confirm", illustration: "ob-item-confirm"),
-                OBChip(icon: "ob-hand-heart", label: "Optional", illustration: "ob-item-optional")]
-    )
-
-    static let featureRecipients = OBFeatureContent(
-        title: "One trusted person. Or many.",
-        subtitle: "You decide who hears what, and when. Add a backup recipient for peace of mind.",
-        imageDescription: "App mockup: recipient cards with photo, name, and relationship label",
-        chips: [OBChip(icon: "ob-users", label: "Up to 50 people", illustration: "ob-item-people"),
-                OBChip(icon: "ob-shield-check", label: "Backup recipient", illustration: "ob-item-backup")]
-    )
+    static let showcasePages: [OBShowcasePage] = [
+        OBShowcasePage(
+            id: "record",
+            hero: "ob-d-microphone",
+            satellites: ["ob-d-video", "ob-d-photo"],
+            title: "Say it the way only you can.",
+            subtitle: "Voice, video, or a photo with a few words. Whatever feels honest."
+        ),
+        OBShowcasePage(
+            id: "schedule",
+            hero: "ob-d-calendar",
+            satellites: ["ob-d-gift", "ob-d-clock"],
+            title: "Pick the moment it arrives.",
+            subtitle: "Tomorrow, their 18th birthday, or ten years from now. You choose the day."
+        ),
+        OBShowcasePage(
+            id: "secure",
+            hero: "ob-d-lock",
+            satellites: ["ob-d-shield", "ob-d-heart"],
+            title: "Sealed the moment you finish.",
+            subtitle: "Encrypted end to end. Only the person you choose will ever see it."
+        ),
+        OBShowcasePage(
+            id: "deliver",
+            hero: "ob-d-plane",
+            satellites: ["ob-d-envelope", "ob-d-bell"],
+            title: "It arrives gently, on your day.",
+            subtitle: "By email or in the app. Add a backup recipient for peace of mind."
+        )
+    ]
 
     // MARK: - Social proof
 
@@ -209,34 +174,5 @@ enum OnboardingContent {
         OBOption(id: "encrypt", emoji: "🛡️", text: "Encrypt everything by default"),
         OBOption(id: "allow_ctm", emoji: "🕰️", text: "Allow Critical Timed Messages"),
         OBOption(id: "simple", emoji: "🤍", text: "Keep it simple for now")
-    ]
-
-    // MARK: - Paywall
-
-    struct OBPaywallCard: Identifiable {
-        let id = UUID()
-        let title: String
-        let imageDescription: String
-        let reviewQuote: String
-        let reviewer: String
-    }
-
-    static let paywallCards: [OBPaywallCard] = [
-        OBPaywallCard(title: "Unlimited messages",
-                      imageDescription: "Illustration: a stack of sealed messages, warm and full",
-                      reviewQuote: "I've recorded one for every birthday until she turns 18.",
-                      reviewer: "Sarah, 34"),
-        OBPaywallCard(title: "Critical Timed Messages",
-                      imageDescription: "Illustration: a calm clock with a soft protective glow",
-                      reviewQuote: "Knowing my family will hear from me no matter what lets me sleep.",
-                      reviewer: "Michael, 47"),
-        OBPaywallCard(title: "Up to 50 recipients",
-                      imageDescription: "Illustration: a small circle of people connected by soft light",
-                      reviewQuote: "My whole family is in here now. Everyone has something waiting.",
-                      reviewer: "Elena, 58"),
-        OBPaywallCard(title: "End-to-end encryption and secure backup",
-                      imageDescription: "Illustration: a shield over a vault, calm and solid",
-                      reviewQuote: "These are my most private words. It matters that they're truly safe.",
-                      reviewer: "David, 41")
     ]
 }

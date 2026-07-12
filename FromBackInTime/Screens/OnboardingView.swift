@@ -21,6 +21,16 @@ struct OnboardingView: View {
         }
         .environment(state)
         .tint(OnboardingTheme.accent)
+        .onAppear {
+#if DEBUG
+            // Debug shortcut: launch with `-ob-jump N` to open the flow at
+            // OnboardingStep.order[N] without tapping through every screen.
+            let jump = UserDefaults.standard.integer(forKey: "ob-jump")
+            if jump > 0, jump < OnboardingStep.order.count, state.path.isEmpty {
+                state.path = Array(OnboardingStep.order[1...jump])
+            }
+#endif
+        }
     }
 }
 
@@ -40,41 +50,26 @@ struct OnboardingStepScreen: View {
         switch step {
         case .hookOpen:        OBHookOpenView()
         case .hookQuestion:    OBHookQuestionView()
-        case .hookPromise:     OBHookPromiseView()
 
         case .nameInput:       OBNameInputView()
-        case .welcome:         OBWelcomeView()
 
         case .quizBlockOne:    OBQuizBlockView(step: .quizBlockOne, questions: OnboardingContent.blockOne)
         case .empathyOne:      OBEmpathyView(content: OnboardingContent.empathyOne)
         case .quizBlockTwo:    OBQuizBlockView(step: .quizBlockTwo, questions: OnboardingContent.blockTwo)
-        case .empathyTwo:      OBEmpathyView(content: OnboardingContent.empathyTwo)
 
         case .painStat:        OBPainStatView()
-        case .painUnsaid:      OBPainUnsaidView()
-        case .painProtect:     OBPainProtectView()
-
         case .thesis:          OBThesisView()
-        case .authority:       OBAuthorityView()
-        case .audience:        OBAudienceView()
-        case .science:         OBScienceView()
+
+        case .featureShowcase: OBFeatureShowcaseView()
         case .ctmIntro:        OBCTMIntroView()
 
-        case .featureRecord:     OBFeatureView(step: .featureRecord, content: OnboardingContent.featureRecord)
-        case .featureSchedule:   OBFeatureView(step: .featureSchedule, content: OnboardingContent.featureSchedule)
-        case .featureSecure:     OBFeatureView(step: .featureSecure, content: OnboardingContent.featureSecure)
-        case .featureDeliver:    OBFeatureView(step: .featureDeliver, content: OnboardingContent.featureDeliver)
-        case .featureCTM:        OBFeatureView(step: .featureCTM, content: OnboardingContent.featureCTM)
-        case .featureRecipients: OBFeatureView(step: .featureRecipients, content: OnboardingContent.featureRecipients)
-
         case .socialProof:     OBSocialProofView()
-        case .comparison:      OBComparisonView()
         case .preferences:     OBPreferencesView()
 
         case .loader:          OBLoaderView()
-        case .crescendo:       OBCrescendoView()
         case .planReveal:      OBPlanRevealView()
 
+        case .authGate:        OBAuthGateView()
         case .firstAction:     OBFirstActionView()
         }
     }

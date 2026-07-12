@@ -2,7 +2,8 @@
 //  OBPainTurnSteps.swift
 //  FromBackInTime
 //
-//  Act 4 (pain points) and Act 5 (the turn: how we solve it).
+//  Act 4: the pain (one stat that lands) and the turn (the thesis), then
+//  the Critical Timed Message intro that follows the feature showcase.
 //
 
 import SwiftUI
@@ -71,114 +72,7 @@ struct OBPainStatView: View {
     }
 }
 
-// MARK: - Act 4: the words we never say
-
-struct OBPainUnsaidView: View {
-    @Environment(OnboardingState.self) private var state
-    private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            GeometryReader { proxy in
-                Image("ob-sky-unsaid")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [.clear, Self.skyBottom.opacity(0.5), Self.skyBottom.opacity(0.95)],
-                startPoint: .center, endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            VStack(spacing: 0) {
-                Spacer()
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    (
-                        Text("The words we keep putting off ").foregroundColor(OnboardingTheme.title)
-                        + Text("rarely get said.").foregroundColor(OnboardingTheme.highlight)
-                    )
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                    (
-                        Text("There's never a right time to say the deepest things, until suddenly ").foregroundColor(OnboardingTheme.title.opacity(0.7))
-                        + Text("there's no time at all.").foregroundColor(OnboardingTheme.highlight)
-                    )
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, AppSpacing.xl)
-
-                Button("Continue") { state.advance(from: .painUnsaid) }
-                    .primaryButton()
-            }
-            .padding(.horizontal, OnboardingTheme.screenPadding)
-            .padding(.bottom, OnboardingTheme.bottomPadding)
-        }
-    }
-}
-
-// MARK: - Act 4: the protect / dead man's switch fear
-
-struct OBPainProtectView: View {
-    @Environment(OnboardingState.self) private var state
-    private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            GeometryReader { proxy in
-                Image("ob-sky-protect")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [.clear, Self.skyBottom.opacity(0.5), Self.skyBottom.opacity(0.95)],
-                startPoint: .center, endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            VStack(spacing: 0) {
-                Spacer()
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    (
-                        Text("Some words shouldn't depend on ").foregroundColor(OnboardingTheme.title)
-                        + Text("you being here ").foregroundColor(OnboardingTheme.highlight)
-                        + Text("to say them.").foregroundColor(OnboardingTheme.title)
-                    )
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                    (
-                        Text("A parent. Someone living with illness. Anyone whose work or health carries ").foregroundColor(OnboardingTheme.title.opacity(0.7))
-                        + Text("real risk.").foregroundColor(OnboardingTheme.highlight)
-                    )
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, AppSpacing.xl)
-
-                Button("Show me how it works") { state.advance(from: .painProtect) }
-                    .primaryButton()
-            }
-            .padding(.horizontal, OnboardingTheme.screenPadding)
-            .padding(.bottom, OnboardingTheme.bottomPadding)
-        }
-    }
-}
-
-// MARK: - Act 5: thesis
+// MARK: - Act 4: thesis (the turn)
 
 struct OBThesisView: View {
     @Environment(OnboardingState.self) private var state
@@ -215,7 +109,7 @@ struct OBThesisView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .opacity(showSub ? 1 : 0)
                 Spacer()
-                Button("Continue") { state.advance(from: .thesis) }
+                Button("Show me how") { state.advance(from: .thesis) }
                     .primaryButton()
                     .opacity(showSub ? 1 : 0)
             }
@@ -230,241 +124,15 @@ struct OBThesisView: View {
     }
 }
 
-// MARK: - Act 5: authority
-
-struct OBAuthorityView: View {
-    @Environment(OnboardingState.self) private var state
-
-    private let pillars: [(icon: String, label: String)] = [
-        ("ob-hand-heart", "Grief counselors"),
-        ("ob-lock-key", "Cryptographers"),
-        ("ob-scroll", "Estate planners")
-    ]
-
-    var body: some View {
-        ZStack {
-            GeometryReader { proxy in
-                Image("ob-sky-authority")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: AppSpacing.xl) {
-                        OBTitle(
-                            text: "\(state.displayName), you're in careful hands.",
-                            subtitle: "We built this slowly, with the help of people who do this for a living.",
-                            alignment: .center
-                        )
-
-                        VStack(spacing: AppSpacing.md) {
-                            ForEach(pillars, id: \.label) { pillar in
-                                HStack(spacing: AppSpacing.lg) {
-                                    OBIcon(name: pillar.icon, size: 28)
-                                        .foregroundStyle(OnboardingTheme.accent)
-                                        .frame(width: 52, height: 52)
-                                        .background(OnboardingTheme.accent.opacity(0.10), in: .circle)
-                                    Text(pillar.label)
-                                        .appFont(.bodyL)
-                                        .fontWeight(.medium)
-                                        .foregroundStyle(OnboardingTheme.title)
-                                    Spacer()
-                                }
-                                .padding(AppSpacing.lg)
-                                .background(OnboardingTheme.card, in: .rect(cornerRadius: OnboardingTheme.cardCornerRadius))
-                                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 5)
-                            }
-                        }
-
-                        Text("Your messages are encrypted end to end. Only the people you choose will ever read or watch them.")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundStyle(OnboardingTheme.title.opacity(0.6))
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(.horizontal, OnboardingTheme.screenPadding)
-                    .padding(.top, AppSpacing.lg)
-                }
-                .scrollIndicators(.hidden)
-
-                OBBottomBar(title: "Continue") { state.advance(from: .authority) }
-            }
-        }
-    }
-}
-
-// MARK: - Act 5: who it's for
-
-struct OBAudienceView: View {
-    @Environment(OnboardingState.self) private var state
-
-    private let groups: [(icon: String, title: String, detail: String)] = [
-        ("ob-baby", "Parents & children", "Words for the people you're raising, today and for the years ahead."),
-        ("ob-heart", "Living with illness", "Be there for the birthdays and milestones you might miss."),
-        ("ob-medal", "Military & first responders", "For those whose service carries real, daily risk."),
-        ("ob-hardhat", "High-risk work", "If the unexpected happens, your words still reach them.")
-    ]
-
-    var body: some View {
-        ZStack {
-            GeometryReader { proxy in
-                Image("ob-sky-audience")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: AppSpacing.xl) {
-                        OBTitle(
-                            text: "Made for the moments that matter most.",
-                            subtitle: "Especially for people who carry more than most.",
-                            alignment: .center
-                        )
-
-                        VStack(spacing: AppSpacing.md) {
-                            ForEach(groups, id: \.title) { g in
-                                HStack(alignment: .top, spacing: AppSpacing.lg) {
-                                    OBIcon(name: g.icon, size: 26)
-                                        .foregroundStyle(OnboardingTheme.accent)
-                                        .frame(width: 50, height: 50)
-                                        .background(OnboardingTheme.accent.opacity(0.10), in: .circle)
-                                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                                        Text(g.title)
-                                            .appFont(.heading5)
-                                            .foregroundStyle(OnboardingTheme.title)
-                                        Text(g.detail)
-                                            .font(.system(size: 15, weight: .medium, design: .rounded))
-                                            .foregroundStyle(OnboardingTheme.title.opacity(0.6))
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    Spacer(minLength: 0)
-                                }
-                                .padding(AppSpacing.lg)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(OnboardingTheme.card, in: .rect(cornerRadius: OnboardingTheme.cardCornerRadius))
-                                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 5)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, OnboardingTheme.screenPadding)
-                    .padding(.top, AppSpacing.lg)
-                }
-                .scrollIndicators(.hidden)
-
-                OBBottomBar(title: "Continue") { state.advance(from: .audience) }
-            }
-        }
-    }
-}
-
-// MARK: - Act 5: science carousel
-
-struct OBScienceView: View {
-    @Environment(OnboardingState.self) private var state
-    @State private var page = 0
-
-    private static let skyBottom = Color(red: 200/255, green: 222/255, blue: 240/255)
-
-    private let cards = [
-        (title: "Letters to the future\nchange behavior.",
-         body: "People who write to their future selves make different choices today. The act of speaking forward changes the speaker.",
-         image: "ob-sky-science1"),
-        (title: "A recorded voice carries\nmore than words.",
-         body: "Tone, breath, a pause, a laugh. Hearing someone is one of the deepest comforts after loss, in ways text never reaches.",
-         image: "ob-sky-science2"),
-        (title: "Closure isn't about\nthe other person.",
-         body: "It's about giving the part of you that still has something to say a way to say it. Even years later. Even after.",
-         image: "ob-sky-science3")
-    ]
-
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            // Full-bleed background that crossfades as the page changes.
-            GeometryReader { proxy in
-                Image(cards[page].image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-                    .id(page)
-                    .transition(.opacity)
-            }
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [.clear, Self.skyBottom.opacity(0.5), Self.skyBottom.opacity(0.95)],
-                startPoint: .center, endPoint: .bottom
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            VStack(spacing: AppSpacing.xl) {
-                VStack(spacing: AppSpacing.md) {
-                    Text(cards[page].title)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(OnboardingTheme.title)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .contentTransition(.numericText())
-                    Text(cards[page].body)
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(OnboardingTheme.title.opacity(0.65))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .contentTransition(.numericText())
-                }
-
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(cards.indices, id: \.self) { i in
-                        Capsule()
-                            .fill(OnboardingTheme.title.opacity(i == page ? 0.9 : 0.25))
-                            .frame(width: i == page ? 22 : 7, height: 7)
-                    }
-                }
-
-                Button(page == cards.count - 1 ? "Continue" : "Next") {
-                    if page == cards.count - 1 {
-                        state.advance(from: .science)
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.45)) { page += 1 }
-                    }
-                }
-                .primaryButton()
-            }
-            .padding(.horizontal, OnboardingTheme.screenPadding)
-            .padding(.bottom, OnboardingTheme.bottomPadding)
-        }
-        .contentShape(.rect)
-        .gesture(
-            DragGesture(minimumDistance: 30)
-                .onEnded { value in
-                    if value.translation.width < -40, page < cards.count - 1 {
-                        withAnimation(.easeInOut(duration: 0.45)) { page += 1 }
-                    } else if value.translation.width > 40, page > 0 {
-                        withAnimation(.easeInOut(duration: 0.45)) { page -= 1 }
-                    }
-                }
-        )
-    }
-}
-
 // MARK: - Act 5: Critical Timed Message intro
 
 struct OBCTMIntroView: View {
     @Environment(OnboardingState.self) private var state
 
     private let steps: [(icon: String, title: String, detail: String)] = [
-        ("ob-calendar", "We check in, gently", "A quiet tap on your schedule. One touch to confirm you're here."),
-        ("ob-clock", "If you ever go quiet", "Miss enough check-ins and we know something has changed."),
-        ("ob-envelope", "Your message is delivered", "It reaches the person you trusted it to, exactly as you left it.")
+        ("ob-d-calendar", "We check in, gently", "A quiet tap on your schedule. One touch to confirm you're here."),
+        ("ob-d-hourglass", "If you ever go quiet", "Miss enough check-ins and we know something has changed."),
+        ("ob-d-envelope", "Your message is delivered", "It reaches the person you trusted it to, exactly as you left it.")
     ]
 
     @State private var stepsDone = false
@@ -511,7 +179,7 @@ struct OBCTMIntroView: View {
                 }
                 .scrollIndicators(.hidden)
 
-                OBBottomBar(title: "See what's inside", enabled: stepsDone) {
+                OBBottomBar(title: "Continue", enabled: stepsDone) {
                     state.advance(from: .ctmIntro)
                 }
             }
@@ -536,9 +204,11 @@ struct OBStepFlow: View {
                 HStack(alignment: .top, spacing: AppSpacing.lg) {
                     VStack(spacing: 0) {
                         ZStack {
-                            Circle().fill(OnboardingTheme.accent.opacity(0.12))
-                            OBIcon(name: steps[i].icon, size: 26)
-                                .foregroundStyle(OnboardingTheme.accent)
+                            Circle().fill(OnboardingTheme.accent.opacity(0.06))
+                            Image(steps[i].icon)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 34, height: 34)
                         }
                         .frame(width: 56, height: 56)
                         .scaleEffect(visible ? 1 : 0.4)

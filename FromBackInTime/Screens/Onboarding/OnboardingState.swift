@@ -14,6 +14,11 @@ final class OnboardingState {
     /// Navigation path. Root (hookOpen) is not in here.
     var path: [OnboardingStep] = []
 
+    /// True when the user jumped to the auth gate via "I already have an
+    /// account". Both sign-in and skip then go straight into the app instead
+    /// of continuing the new-user story.
+    var isReturningUser = false
+
     // Collected answers
     var name: String = ""
     /// Selected option ids keyed by question id.

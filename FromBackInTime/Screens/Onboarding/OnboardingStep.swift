@@ -4,7 +4,8 @@
 //
 //  Every screen in the flow as one ordered enum. The order array drives
 //  linear navigation and the progress bar. Quiz blocks are a single step
-//  that holds several questions and animates between them internally.
+//  that holds several questions and animates between them internally, and
+//  the feature showcase is one step that pages through the product story.
 //
 
 import Foundation
@@ -13,63 +14,45 @@ enum OnboardingStep: Hashable {
     // Act 1 - Hook (cinematic, no progress bar)
     case hookOpen
     case hookQuestion
-    case hookPromise
 
     // Act 2 - Personalize
     case nameInput
-    case welcome
 
-    // Act 3 - Personal questions + empathy interstitials
+    // Act 3 - Personal questions + one empathy payoff
     case quizBlockOne
     case empathyOne
     case quizBlockTwo
-    case empathyTwo
 
-    // Act 4 - Pain points
+    // Act 4 - The pain, then the turn
     case painStat
-    case painUnsaid
-    case painProtect
-
-    // Act 5 - The turn (how we solve it)
     case thesis
-    case authority
-    case audience
-    case science
+
+    // Act 5 - The product, shown not listed
+    case featureShowcase
     case ctmIntro
 
-    // Act 6 - Feature reveals
-    case featureRecord
-    case featureSchedule
-    case featureSecure
-    case featureDeliver
-    case featureCTM
-    case featureRecipients
-
-    // Act 7 - Make them believe
+    // Act 6 - Believe
     case socialProof
-    case comparison
     case preferences
 
-    // Act 8 - Crescendo
+    // Act 7 - Crescendo
     case loader
-    case crescendo
     case planReveal
 
-    // Act 9 - Close
+    // Act 8 - Keep it, then close
+    case authGate
     case firstAction
 
     /// Linear order of the whole flow. First element is the stack root.
     static let order: [OnboardingStep] = [
         .hookOpen, .hookQuestion,
-        .nameInput, .welcome,
-        .quizBlockOne, .empathyOne, .quizBlockTwo, .empathyTwo,
-        .painStat, .painUnsaid, .painProtect,
-        .thesis, .authority, .audience, .science, .ctmIntro,
-        .featureRecord, .featureSchedule, .featureSecure,
-        .featureDeliver, .featureCTM, .featureRecipients,
-        .socialProof, .comparison, .preferences,
-        .loader, .crescendo, .planReveal,
-        .firstAction
+        .nameInput,
+        .quizBlockOne, .empathyOne, .quizBlockTwo,
+        .painStat, .thesis,
+        .featureShowcase, .ctmIntro,
+        .socialProof, .preferences,
+        .loader, .planReveal,
+        .authGate, .firstAction
     ]
 
     var index: Int { Self.order.firstIndex(of: self) ?? 0 }
@@ -82,7 +65,7 @@ enum OnboardingStep: Hashable {
     /// Cinematic hook screens hide the progress bar.
     var showsProgress: Bool {
         switch self {
-        case .hookOpen, .hookQuestion, .hookPromise: return false
+        case .hookOpen, .hookQuestion: return false
         default: return true
         }
     }
