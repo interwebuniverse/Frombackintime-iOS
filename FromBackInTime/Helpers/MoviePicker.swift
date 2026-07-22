@@ -14,10 +14,12 @@ import AVFoundation
 import UniformTypeIdentifiers
 
 struct MoviePicker: UIViewControllerRepresentable {
-    /// (bytes, duration in seconds, MIME content type). Content type reflects the
-    /// actual file the camera or library produced (video/quicktime vs video/mp4),
-    /// both of which the backend accepts, so the R2 object is labelled correctly.
-    var onComplete: (Data?, Int, String) -> Void
+    /// (bytes, duration in seconds, MIME content type, temp file URL). Content
+    /// type reflects the actual file the camera or library produced
+    /// (video/quicktime vs video/mp4), both of which the backend accepts, so the
+    /// R2 object is labelled correctly. The URL points at the clip on disk so
+    /// the caller can offer playback review before saving.
+    var onComplete: (Data?, Int, String, URL?) -> Void
 
     /// Cap so a runaway recording can't buffer hundreds of MB into memory.
     static let maxDuration: TimeInterval = 5 * 60
@@ -25,6 +27,10 @@ struct MoviePicker: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
+        // mediaTypes must include movie BEFORE cameraCaptureMode is set to
+        // .video; the default (image-only) makes that setter throw on device.
+        picker.mediaTypes = [UTType.movie.identifier]
+        picker.videoQuality = .typeHigh
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             picker.sourceType = .camera
             picker.cameraCaptureMode = .video
@@ -33,8 +39,6 @@ struct MoviePicker: UIViewControllerRepresentable {
         } else {
             picker.sourceType = .photoLibrary
         }
-        picker.mediaTypes = [UTType.movie.identifier]
-        picker.videoQuality = .typeHigh
         return picker
     }
 
@@ -43,9 +47,9 @@ struct MoviePicker: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(onComplete: onComplete) }
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let onComplete: (Data?, Int, String) -> Void
+        let onComplete: (Data?, Int, String, URL?) -> Void
 
-        init(onComplete: @escaping (Data?, Int, String) -> Void) {
+        init(onComplete: @escaping (Data?, Int, String, URL?) -> Void) {
             self.onComplete = onComplete
         }
 
@@ -56,7 +60,7 @@ struct MoviePicker: UIViewControllerRepresentable {
             let onComplete = self.onComplete
             guard let url = info[.mediaURL] as? URL else {
                 picker.dismiss(animated: true)
-                onComplete(nil, 0, "video/mp4")
+                onComplete(nil, 0, "video/mp4", nil)
                 return
             }
             // Dismiss immediately, then read the (potentially several-hundred-MB)
@@ -67,14 +71,14 @@ struct MoviePicker: UIViewControllerRepresentable {
                     let seconds = CMTimeGetSeconds(AVURLAsset(url: url).duration)
                     let duration = seconds.isFinite ? Int(seconds.rounded()) : 0
                     let contentType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "video/mp4"
-                    await MainActor.run { onComplete(data, max(duration, 1), contentType) }
+                    await MainActor.run { onComplete(data, max(duration, 1), contentType, url) }
                 }
             }
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             picker.dismiss(animated: true)
-            onComplete(nil, 0, "video/mp4")
+            onComplete(nil, 0, "video/mp4", nil)
         }
     }
 }

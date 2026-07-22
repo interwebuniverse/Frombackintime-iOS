@@ -208,7 +208,7 @@ struct HomeView: View {
                 when = years < 1.05 ? "In about a year" : "In \(String(format: "%.1f", years)) years"
             }
         }
-        return "\(when) · \(DateFormatter.prettyDate.string(from: date))"
+        return "\(when) · \(DateFormatter.prettyDateTime.string(from: date))"
     }
 
     // MARK: - Load error

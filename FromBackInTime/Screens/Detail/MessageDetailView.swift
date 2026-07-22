@@ -302,7 +302,7 @@ struct MessageDetailView: View {
                 }
                 if let d = current.deliveryDate {
                     infoChip(icon: "app-ic-calendar",
-                             label: DateFormatter.prettyDate.string(from: d),
+                             label: DateFormatter.prettyDateTime.string(from: d),
                              tint: AppShellTheme.accent)
                 }
             }

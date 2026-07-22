@@ -25,6 +25,7 @@ struct VoiceRecordView: View {
     @State private var phase: CGFloat = 0
     @State private var ticker: Timer?
     @State private var recorder = AudioRecorder()
+    @State private var playback = AudioPlayback()
     @State private var isSaving = false
     @State private var saveError: String?
     @State private var showSignIn = false
@@ -53,6 +54,7 @@ struct VoiceRecordView: View {
         .onDisappear {
             ticker?.invalidate()
             if state == .recording { recorder.stop() }
+            playback.stop()
             recorder.cleanup()
         }
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in
@@ -132,7 +134,7 @@ struct VoiceRecordView: View {
     }
 
     private var waveform: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: state != .recording)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: state != .recording && !playback.isPlaying)) { timeline in
             Canvas { ctx, size in
                 let t = timeline.date.timeIntervalSinceReferenceDate
                 let bars = 36
@@ -149,7 +151,13 @@ struct VoiceRecordView: View {
                         let slow: Double = abs(sin(t * 9 + phaseOffset * 1.7))
                         baseAmp = CGFloat(20 + 28 * fast + 18 * slow)
                     case .recorded:
-                        baseAmp = CGFloat(8 + 8 * abs(sin(phaseOffset * 2)))
+                        if playback.isPlaying {
+                            let fast: Double = abs(sin(t * 4 + phaseOffset))
+                            let slow: Double = abs(sin(t * 9 + phaseOffset * 1.7))
+                            baseAmp = CGFloat(14 + 20 * fast + 12 * slow)
+                        } else {
+                            baseAmp = CGFloat(8 + 8 * abs(sin(phaseOffset * 2)))
+                        }
                     }
                     let x = (CGFloat(i) + 0.5) * (size.width / CGFloat(bars))
                     let rect = CGRect(
@@ -174,7 +182,7 @@ struct VoiceRecordView: View {
         switch state {
         case .idle: return "Tap to record · just your voice"
         case .recording: return "Recording…"
-        case .recorded: return "Sounds good?"
+        case .recorded: return "Listen back, then save"
         }
     }
 
@@ -183,31 +191,9 @@ struct VoiceRecordView: View {
     private var bottomBar: some View {
         Group {
             if state == .recorded {
-                HStack(spacing: AppSpacing.lg) {
-                    Button {
-                        Haptics.selection()
-                        state = .idle
-                        elapsed = 0
-                    } label: {
-                        Text("Retake")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppSpacing.md)
-                            .background(Capsule().fill(.white.opacity(0.18)))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button(action: save) {
-                        Text(isSaving ? "Saving\u{2026}" : "Save")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(AppShellTheme.title)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppSpacing.md)
-                            .background(Capsule().fill(.white))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isSaving)
+                VStack(spacing: AppSpacing.lg) {
+                    playbackRow
+                    retakeSaveRow
                 }
             } else {
                 Button(action: toggleRecording) {
@@ -226,6 +212,69 @@ struct VoiceRecordView: View {
                 .a11y("voice.button")
                 .accessibilityLabel(state == .recording ? "Stop" : "Record")
             }
+        }
+    }
+
+    /// Listen back before sealing: play/pause plus a live progress bar.
+    private var playbackRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            Button {
+                guard let url = recorder.fileURL else { return }
+                Haptics.selection()
+                playback.toggle(url: url)
+            } label: {
+                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(AppShellTheme.title)
+                    .frame(width: 54, height: 54)
+                    .background(Circle().fill(.white))
+            }
+            .buttonStyle(.plain)
+            .a11y("voice.play")
+            .accessibilityLabel(playback.isPlaying ? "Pause" : "Play")
+
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !playback.isPlaying)) { _ in
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(.white.opacity(0.22))
+                        Capsule()
+                            .fill(.white)
+                            .frame(width: max(geo.size.width * playback.progress, 6))
+                    }
+                }
+                .frame(height: 6)
+            }
+        }
+        .padding(.horizontal, AppSpacing.sm)
+    }
+
+    private var retakeSaveRow: some View {
+        HStack(spacing: AppSpacing.lg) {
+            Button {
+                Haptics.selection()
+                playback.stop()
+                state = .idle
+                elapsed = 0
+            } label: {
+                Text("Retake")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(Capsule().fill(.white.opacity(0.18)))
+            }
+            .buttonStyle(.plain)
+
+            Button(action: save) {
+                Text(isSaving ? "Saving\u{2026}" : "Save")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppShellTheme.title)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(Capsule().fill(.white))
+            }
+            .buttonStyle(.plain)
+            .disabled(isSaving)
         }
     }
 
@@ -278,6 +327,7 @@ struct VoiceRecordView: View {
 
     private func save() {
         guard !isSaving else { return }
+        playback.stop()
         guard !authStore.state.isAnonymous else {
             showSignIn = true
             return

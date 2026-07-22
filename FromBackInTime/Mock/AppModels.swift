@@ -230,4 +230,12 @@ extension DateFormatter {
         f.timeStyle = .none
         return f
     }()
+    /// Delivery moments include the time of day now that scheduling is
+    /// minute-level, shown in the user's locale and timezone.
+    static let prettyDateTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f
+    }()
 }

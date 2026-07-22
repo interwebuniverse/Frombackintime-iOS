@@ -177,7 +177,7 @@ struct CTMRow: View {
                         )
                 }
                 if let d = message.deliveryDate {
-                    Text("Projected release: \(DateFormatter.prettyDate.string(from: d))")
+                    Text("Projected release: \(DateFormatter.prettyDateTime.string(from: d))")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppShellTheme.accent)
                 }

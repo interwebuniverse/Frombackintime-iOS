@@ -32,9 +32,10 @@ struct EditMessageView: View {
         _deliveryDate = State(initialValue: message.deliveryDate ?? Calendar.current.date(byAdding: .month, value: 6, to: .now) ?? .now)
     }
 
+    /// Any future moment works; the buffer keeps "save" from racing a time
+    /// that passes while the sheet is open.
     private var earliestDelivery: Date {
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
-        return Calendar.current.startOfDay(for: tomorrow)
+        .now.addingTimeInterval(15 * 60)
     }
 
     private var canSave: Bool {
@@ -57,13 +58,19 @@ struct EditMessageView: View {
                             )
                     }
                     if message.kind == .standard {
-                        section(title: "Date of delivery") {
-                            DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: .date)
-                                .labelsHidden()
-                                .datePickerStyle(.graphical)
-                                .padding(AppSpacing.md)
-                                .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-                                .shadow(color: AppShellTheme.cardShadow, radius: 10, y: 4)
+                        section(title: "Delivery date & time") {
+                            VStack(spacing: 0) {
+                                DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: [.date, .hourAndMinute])
+                                    .labelsHidden()
+                                    .datePickerStyle(.graphical)
+                                Text("Your local time. We deliver on the minute.")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundStyle(AppShellTheme.subtitle)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(AppSpacing.md)
+                            .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                            .shadow(color: AppShellTheme.cardShadow, radius: 10, y: 4)
                         }
                     }
                     saveButton

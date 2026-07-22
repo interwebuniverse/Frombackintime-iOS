@@ -73,7 +73,7 @@ struct MessageRow: View {
 
     private var dateLabel: String {
         if let d = message.deliveryDate {
-            return "Delivers \(DateFormatter.prettyDate.string(from: d))"
+            return "Delivers \(DateFormatter.prettyDateTime.string(from: d))"
         }
         return message.kind == .ctm ? "Awaiting activation" : "Date TBD"
     }

@@ -9,6 +9,7 @@
 //  up in Home, Library, and the recipient's icon page immediately.
 //
 
+import AVKit
 import SwiftUI
 import UIKit
 
@@ -28,6 +29,7 @@ struct RecordView: View {
     @State private var showCamera = false
     @State private var videoData: Data?
     @State private var videoContentType = "video/mp4"
+    @State private var previewPlayer: AVPlayer?
     @State private var isSaving = false
     @State private var saveError: String?
     @State private var showSignIn = false
@@ -51,14 +53,21 @@ struct RecordView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarHidden(true)
-        .onDisappear { ticker?.invalidate() }
+        .onDisappear {
+            ticker?.invalidate()
+            previewPlayer?.pause()
+        }
         .savingOverlay(isSaving, message: "Sealing your video\u{2026}")
         .fullScreenCover(isPresented: $showCamera) {
-            MoviePicker { data, duration, contentType in
+            MoviePicker { data, duration, contentType, url in
                 if let data {
                     videoData = data
                     videoContentType = contentType
                     elapsed = duration
+                    // Playback goes through the speaker even with the mute
+                    // switch on, so the review is actually audible.
+                    try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                    previewPlayer = url.map { AVPlayer(url: $0) }
                     state = .recorded
                 }
             }
@@ -125,9 +134,22 @@ struct RecordView: View {
 
     private var centerControl: some View {
         VStack(spacing: AppSpacing.lg) {
-            Text(timerLabel)
-                .font(.system(size: 56, weight: .bold, design: .rounded).monospacedDigit())
-                .foregroundStyle(.white)
+            if state == .recorded, let previewPlayer {
+                // Watch the take before sealing it.
+                VideoPlayer(player: previewPlayer)
+                    .aspectRatio(9 / 16, contentMode: .fit)
+                    .frame(maxHeight: 420)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppRadius.lg)
+                            .strokeBorder(.white.opacity(0.25), lineWidth: 1)
+                    )
+                    .a11y("record.preview")
+            } else {
+                Text(timerLabel)
+                    .font(.system(size: 56, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.white)
+            }
             Text(stateLabel)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.75))
@@ -140,6 +162,9 @@ struct RecordView: View {
                 HStack(spacing: AppSpacing.lg) {
                     Button {
                         Haptics.selection()
+                        previewPlayer?.pause()
+                        previewPlayer = nil
+                        videoData = nil
                         state = .idle
                         elapsed = 0
                     } label: {
@@ -197,7 +222,7 @@ struct RecordView: View {
         switch state {
         case .idle: return "Tap to record · selfie camera"
         case .recording: return "Recording…"
-        case .recorded: return "Looks good?"
+        case .recorded: return "Watch it back, then save"
         }
     }
 
@@ -233,6 +258,7 @@ struct RecordView: View {
 
     private func save() {
         guard !isSaving else { return }
+        previewPlayer?.pause()
         guard !authStore.state.isAnonymous else {
             showSignIn = true
             return

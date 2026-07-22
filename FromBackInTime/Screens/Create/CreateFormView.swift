@@ -22,11 +22,12 @@ struct CreateFormView: View {
     @State private var goToComposer: Bool = false
     @State private var showAddPerson = false
 
-    /// Delivery must land in the future; the backend rejects a past/today date.
-    /// Start of tomorrow is the earliest the picker allows.
+    /// Delivery can be any future moment, even later today. The 15-minute
+    /// buffer leaves room to record and upload before finalize re-checks that
+    /// the time hasn't already passed. The picked Date is an absolute instant,
+    /// so the ISO-8601 string the backend gets is timezone-correct as is.
     private var earliestDelivery: Date {
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
-        return Calendar.current.startOfDay(for: tomorrow)
+        .now.addingTimeInterval(15 * 60)
     }
 
     init(kind: MessageKind, medium: MessageMedium, prefilledRecipient: Recipient? = nil) {
@@ -69,14 +70,20 @@ struct CreateFormView: View {
                 }
 
                 if kind == .standard {
-                    section(title: "Date of delivery") {
-                        DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: .date)
-                            .labelsHidden()
-                            .datePickerStyle(.graphical)
-                            .padding(AppSpacing.md)
-                            .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-                            .shadow(color: AppShellTheme.cardShadow, radius: 10, y: 4)
-                            .a11y("form.date")
+                    section(title: "Delivery date & time") {
+                        VStack(spacing: 0) {
+                            DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: [.date, .hourAndMinute])
+                                .labelsHidden()
+                                .datePickerStyle(.graphical)
+                                .a11y("form.date")
+                            Text("Your local time. We deliver on the minute.")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(AppShellTheme.subtitle)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(AppSpacing.md)
+                        .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                        .shadow(color: AppShellTheme.cardShadow, radius: 10, y: 4)
                     }
                 } else {
                     ctmExplainer
