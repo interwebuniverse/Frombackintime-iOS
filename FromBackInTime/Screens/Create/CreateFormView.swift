@@ -154,17 +154,33 @@ struct CreateFormView: View {
             presetGrid
 
             if preset == nil {
-                VStack(spacing: 0) {
-                    DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: [.date, .hourAndMinute])
+                VStack(spacing: AppSpacing.sm) {
+                    // Calendar for the day, compact pill for the time. Both
+                    // together in graphical style renders with huge dead space.
+                    DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: .date)
                         .labelsHidden()
                         .datePickerStyle(.graphical)
-                        // The graphical picker doesn't reliably keep the time
-                        // wheel inside the range; snap forward here.
+                        .tint(AppShellTheme.accent)
+                        // The picker doesn't reliably keep the selection inside
+                        // the range; snap forward here.
                         .onChange(of: deliveryDate) { _, picked in
                             let floor = earliestDelivery
                             if picked < floor { deliveryDate = floor }
                         }
                         .a11y("form.date")
+
+                    Divider().overlay(AppShellTheme.cardBorder)
+
+                    HStack {
+                        Text("At what time?")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppShellTheme.title)
+                        Spacer()
+                        DatePicker("", selection: $deliveryDate, displayedComponents: .hourAndMinute)
+                            .labelsHidden()
+                            .tint(AppShellTheme.accent)
+                    }
+                    .padding(.top, 2)
                 }
                 .padding(AppSpacing.md)
                 .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))

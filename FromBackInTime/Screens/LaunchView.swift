@@ -38,28 +38,47 @@ struct LaunchView: View {
         ZStack {
             AppBackground()
 
+            // Everything lives in one dead-centered column: glow, icon,
+            // wordmark, then the single ring (or the error card).
             VStack(spacing: 0) {
-                Spacer()
+                ZStack {
+                    Circle()
+                        .fill(AppShellTheme.accent.opacity(0.14))
+                        .frame(width: 168, height: 168)
+                        .blur(radius: 24)
+                        .scaleEffect(pulsing ? 1.12 : 0.9)
+                    Image("ob-app-icon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 112, height: 112)
+                        .clipShape(RoundedRectangle(cornerRadius: 27, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 27, style: .continuous)
+                                .strokeBorder(.white.opacity(0.6), lineWidth: 1)
+                        )
+                        .shadow(color: AppShellTheme.accent.opacity(0.35), radius: 28, y: 14)
+                        .scaleEffect(pulsing ? 1.05 : 0.97)
+                }
+                .animation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true), value: pulsing)
+                .padding(.bottom, AppSpacing.lg)
 
-                Image("ob-app-icon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 108, height: 108)
-                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                    .shadow(color: AppShellTheme.accent.opacity(0.3), radius: 26, y: 12)
-                    .scaleEffect(pulsing ? 1.06 : 0.96)
-                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: pulsing)
-                    .padding(.bottom, AppSpacing.xxl)
+                Text("FromBackInTime")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppShellTheme.title)
+                Text("Messages that outlive the moment")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(AppShellTheme.subtitle)
+                    .padding(.top, 2)
 
                 if let failureMessage {
                     errorContent(failureMessage)
+                        .padding(.top, AppSpacing.xxl)
                 } else if !isGate {
                     loadingContent
+                        .padding(.top, AppSpacing.xxl)
                 }
-
-                Spacer()
-                Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, AppSpacing.xxl)
         }
         .onAppear {
@@ -105,11 +124,11 @@ struct LaunchView: View {
     private func errorContent(_ message: String) -> some View {
         VStack(spacing: AppSpacing.md) {
             Text("We couldn't open your vault")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(AppShellTheme.title)
                 .multilineTextAlignment(.center)
             Text(message)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(AppShellTheme.subtitle)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -122,12 +141,12 @@ struct LaunchView: View {
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.md + 2)
                     .background(RoundedRectangle(cornerRadius: AppRadius.lg).fill(AppShellTheme.accent))
             }
             .buttonStyle(.plain)
             .disabled(isRetrying)
-            .padding(.top, AppSpacing.sm)
+            .padding(.top, AppSpacing.xs)
             .a11y("launch.retry")
 
             Button {
@@ -141,6 +160,13 @@ struct LaunchView: View {
             .buttonStyle(.plain)
             .a11y("launch.support")
         }
+        .padding(AppSpacing.xl)
+        .background(.white.opacity(0.85), in: RoundedRectangle(cornerRadius: AppShellTheme.cardRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppShellTheme.cardRadius, style: .continuous)
+                .strokeBorder(AppShellTheme.cardBorder, lineWidth: 1)
+        )
+        .shadow(color: AppShellTheme.cardShadow, radius: 16, y: 8)
         .transition(.opacity)
     }
 

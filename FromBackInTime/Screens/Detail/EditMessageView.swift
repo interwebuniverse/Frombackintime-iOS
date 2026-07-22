@@ -64,16 +64,31 @@ struct EditMessageView: View {
                     }
                     if message.kind == .standard {
                         section(title: "Delivery date & time") {
-                            VStack(spacing: 0) {
-                                DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: [.date, .hourAndMinute])
+                            VStack(spacing: AppSpacing.sm) {
+                                // Calendar for the day, compact pill for the
+                                // time: graphical + time renders with huge
+                                // dead space.
+                                DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: .date)
                                     .labelsHidden()
                                     .datePickerStyle(.graphical)
-                                    // The graphical picker doesn't reliably keep
-                                    // the time wheel inside the range; snap here.
+                                    .tint(AppShellTheme.accent)
                                     .onChange(of: deliveryDate) { _, picked in
                                         let floor = earliestDelivery
                                         if picked < floor { deliveryDate = floor }
                                     }
+
+                                Divider().overlay(AppShellTheme.cardBorder)
+
+                                HStack {
+                                    Text("At what time?")
+                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(AppShellTheme.title)
+                                    Spacer()
+                                    DatePicker("", selection: $deliveryDate, displayedComponents: .hourAndMinute)
+                                        .labelsHidden()
+                                        .tint(AppShellTheme.accent)
+                                }
+
                                 // Same guard as the create form: show the full
                                 // when so a default date can't slip through.
                                 Text(deliveryHint)
