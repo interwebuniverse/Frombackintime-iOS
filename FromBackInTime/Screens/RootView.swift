@@ -18,25 +18,19 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if appStore.bootstrapPhase != .ready {
-                // The one launch surface. Every cold start opens here: logo,
-                // ring, retry + support on failure. Only when the session and
-                // vault have landed does it decide what comes next:
-                // onboarding, the paywall gate, or the app.
+            if appStore.bootstrapPhase != .ready || (appState.hasCompletedOnboarding && !paywall.hasAccess) {
+                // THE launch surface, and the only one. Every cold start opens
+                // here and stays here through loading, load errors (retry +
+                // support), and the paywall gate: the hard paywall presents
+                // over this same view. It leaves the screen only for
+                // onboarding or the unlocked app.
                 LaunchView()
                     .transition(.opacity)
             } else if !appState.hasCompletedOnboarding {
                 OnboardingView()
                     .transition(.opacity)
-            } else if paywall.hasAccess {
-                MainTabView()
-                    .transition(.opacity)
             } else {
-                // Finished onboarding but no access yet. PaywallGateView calls
-                // register: an entitled user is unlocked immediately (this view
-                // is a brief backdrop), otherwise Superwall presents the hard
-                // paywall over it. Either way there's no way in without a sub.
-                PaywallGateView()
+                MainTabView()
                     .transition(.opacity)
             }
         }

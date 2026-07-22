@@ -12,6 +12,7 @@ import SwiftUI
 import UIKit
 
 struct LaunchView: View {
+    @Environment(AppState.self) private var appState
     @Environment(MockAppStore.self) private var store
     @Environment(AuthStore.self) private var authStore
     @Environment(PaywallManager.self) private var paywall
@@ -19,10 +20,18 @@ struct LaunchView: View {
     @State private var pulsing = false
     @State private var spinning = false
     @State private var isRetrying = false
+    @State private var gateArmed = false
 
     private var failureMessage: String? {
         if case .failed(let message) = store.bootstrapPhase { return message }
         return nil
+    }
+
+    /// Loaded, onboarded, not subscribed: this view stays put as the calm
+    /// backdrop and the hard paywall presents over it. No second screen, no
+    /// second loader.
+    private var isGate: Bool {
+        store.bootstrapPhase == .ready && appState.hasCompletedOnboarding && !paywall.hasAccess
     }
 
     var body: some View {
@@ -44,7 +53,7 @@ struct LaunchView: View {
 
                 if let failureMessage {
                     errorContent(failureMessage)
-                } else {
+                } else if !isGate {
                     loadingContent
                 }
 
@@ -56,8 +65,22 @@ struct LaunchView: View {
         .onAppear {
             pulsing = true
             spinning = true
+            armGateIfNeeded()
         }
+        .onChange(of: isGate) { _, _ in armGateIfNeeded() }
         .a11y("launch.screen")
+    }
+
+    /// Raise the gated paywall exactly once per lock-in; its own handler
+    /// re-presents on decline, so no loop here.
+    private func armGateIfNeeded() {
+        if isGate {
+            guard !gateArmed else { return }
+            gateArmed = true
+            paywall.requireAccess()
+        } else {
+            gateArmed = false
+        }
     }
 
     // MARK: - Loading
