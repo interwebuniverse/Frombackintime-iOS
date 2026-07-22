@@ -20,28 +20,28 @@ struct HomeView: View {
     @State private var createKind: MessageKind = .standard
 
     var body: some View {
-        AppScreen(title: greetingTitle) {
-            if store.isInitialLoading {
-                LoadingStateView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                    loadErrorCard
-                    spotlight
-                    statsRow
-                    if store.hasArmedCTM { ctmCheckInCard }
-                    ideasSection
-                    peopleStrip
-                    upcomingSection
+        AppScreen(title: greetingTitle, onRefresh: { await store.load() }) {
+            Group {
+                if store.isInitialLoading {
+                    LoadingStateView()
+                        .padding(.top, AppSpacing.xxxxl)
+                } else {
+                    VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                        loadErrorCard
+                        spotlight
+                        statsRow
+                        if store.hasArmedCTM { ctmCheckInCard }
+                        ideasSection
+                        peopleStrip
+                        upcomingSection
+                    }
+                    .padding(.horizontal, AppShellTheme.screenPadding)
+                    .padding(.top, AppSpacing.xs)
+                    .padding(.bottom, AppSpacing.xxxl)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.78), value: store.messages.count)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.78), value: store.recipients.count)
                 }
-                .padding(.horizontal, AppShellTheme.screenPadding)
-                .padding(.top, AppSpacing.xs)
-                .padding(.bottom, AppSpacing.xxxl)
-                .animation(.spring(response: 0.4, dampingFraction: 0.78), value: store.messages.count)
-                .animation(.spring(response: 0.4, dampingFraction: 0.78), value: store.recipients.count)
             }
-            .refreshable { await store.load() }
             .sheet(isPresented: $showCreate) {
                 CreateView(initialKind: createKind)
                     .presentationCornerRadius(28)
@@ -55,7 +55,6 @@ struct HomeView: View {
                     .navigationTransition(.zoom(sourceID: msg.id, in: ns))
             }
             .a11y("home.screen")
-            }
         }
     }
 

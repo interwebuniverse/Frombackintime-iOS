@@ -29,25 +29,24 @@ struct CreateView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            AppNavScrollView(
+                title: "New message",
+                subtitle: "Pick how you want to say it.",
+                trailing: .close { dismiss() },
+                topInset: 10
+            ) {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
                     kindToggle
                     mediumPicker
                 }
-                .padding(AppShellTheme.screenPadding)
+                .padding(.horizontal, AppShellTheme.screenPadding)
                 .padding(.bottom, AppSpacing.xxxl)
             }
-            .background(AppBackground())
-            .scrollContentBackground(.hidden)
-            .navigationTitle("New message")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") { dismiss() }
-                        .foregroundStyle(AppShellTheme.accent)
-                }
-            }
             .a11y("create.screen")
+        }
+        // The scheduled-confirmation screen's Done button ends the whole flow.
+        .onReceive(NotificationCenter.default.publisher(for: .createFlowFinished)) { _ in
+            dismiss()
         }
     }
 

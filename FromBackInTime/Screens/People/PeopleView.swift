@@ -32,17 +32,17 @@ struct PeopleView: View {
     }
 
     var body: some View {
-        AppScreen(title: "People") {
+        AppScreen(
+            title: "People",
+            searchText: $query,
+            searchPrompt: "Search people",
+            onRefresh: { await store.load() }
+        ) {
+            Group {
             if store.isInitialLoading {
                 LoadingStateView(message: "Loading your people\u{2026}")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, AppSpacing.xxxxl)
             } else {
-            ScrollView {
-                AppSearchField(text: $query, prompt: "Search people")
-                    .a11y("people.search")
-                    .padding(.horizontal, AppShellTheme.screenPadding)
-                    .padding(.bottom, AppSpacing.lg)
-
                 if let error = store.error, store.recipients.isEmpty {
                     LoadErrorView(message: error) {
                         Haptics.selection()
@@ -87,7 +87,7 @@ struct PeopleView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.75), value: filtered)
                 }
             }
-            .refreshable { await store.load() }
+            }
             .navigationDestination(for: Recipient.self) { recipient in
                 IconPageView(recipient: recipient)
                     .navigationTransition(.zoom(sourceID: recipient.id, in: ns))
@@ -124,7 +124,6 @@ struct PeopleView: View {
                 Text(deleteError ?? "")
             }
             .a11y("people.screen")
-            }
         }
     }
 

@@ -29,15 +29,18 @@ struct LibraryView: View {
     }
 
     var body: some View {
-        AppScreen(title: "Library") {
+        AppScreen(
+            title: "Library",
+            searchText: $query,
+            searchPrompt: "Search messages",
+            onRefresh: { await store.load() }
+        ) {
+            Group {
             if store.isInitialLoading {
                 LoadingStateView(message: "Loading your messages\u{2026}")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, AppSpacing.xxxxl)
             } else {
-            ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                    AppSearchField(text: $query, prompt: "Search messages")
-                        .a11y("library.search")
                     filterBar
                     if let error = store.error, ctms.isEmpty, standards.isEmpty, query.isEmpty {
                         LoadErrorView(message: error) {
@@ -81,13 +84,12 @@ struct LibraryView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.78), value: filter)
                 .animation(.easeOut(duration: 0.2), value: query)
             }
-            .refreshable { await store.load() }
+            }
             .navigationDestination(for: Message.self) { msg in
                 MessageDetailView(message: msg)
                     .navigationTransition(.zoom(sourceID: msg.id, in: ns))
             }
             .a11y("library.screen")
-            }
         }
     }
 

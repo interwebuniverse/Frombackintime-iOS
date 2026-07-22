@@ -31,10 +31,13 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            listContent
-                .background(AppBackground())
-                .scrollContentBackground(.hidden)
-                .a11y("settings.screen")
+            VStack(spacing: 0) {
+                AppSheetHeader(title: "Settings", trailing: .close { dismiss() })
+                listContent
+            }
+            .background(AppBackground())
+            .toolbar(.hidden, for: .navigationBar)
+            .a11y("settings.screen")
         }
     }
 
@@ -127,14 +130,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(AppShellTheme.accent)
-                }
-            }
+            .scrollContentBackground(.hidden)
             .sheet(isPresented: $showSignIn) {
                 SignInSheet(subtitle: "Sign in so your messages outlive this phone and no one else can ever claim them.")
             }

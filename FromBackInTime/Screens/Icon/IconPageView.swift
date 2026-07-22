@@ -11,6 +11,7 @@ import SwiftUI
 
 struct IconPageView: View {
     @Environment(MockAppStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
     let recipient: Recipient
 
     @State private var showCreate = false
@@ -21,7 +22,10 @@ struct IconPageView: View {
     private var standards: [Message] { store.standardMessages(for: recipient.id) }
 
     var body: some View {
-        ScrollView {
+        AppNavScrollView(
+            title: recipient.name,
+            leading: .back { dismiss() }
+        ) {
             VStack(alignment: .leading, spacing: AppSpacing.xxl) {
                 header
 
@@ -47,11 +51,6 @@ struct IconPageView: View {
             .padding(.top, AppSpacing.xs)
             .padding(.bottom, AppSpacing.xxxl)
         }
-        .background(AppBackground())
-        .scrollContentBackground(.hidden)
-        .navigationTitle(recipient.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.visible, for: .navigationBar)
         .sheet(isPresented: $showCreate) {
             CreateView(initialRecipient: recipient, initialKind: pendingKind)
                 .presentationCornerRadius(28)

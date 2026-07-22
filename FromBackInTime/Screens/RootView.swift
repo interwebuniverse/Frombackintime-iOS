@@ -20,6 +20,11 @@ struct RootView: View {
             if !appState.hasCompletedOnboarding {
                 OnboardingView()
                     .transition(.opacity)
+            } else if appStore.bootstrapPhase != .ready {
+                // Cold launch for a returning user: branded loading screen
+                // until the session + vault land (or fail, with retry inside).
+                LaunchView()
+                    .transition(.opacity)
             } else if paywall.hasAccess {
                 MainTabView()
                     .transition(.opacity)
@@ -34,6 +39,7 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.35), value: appState.hasCompletedOnboarding)
         .animation(.easeInOut(duration: 0.35), value: paywall.hasAccess)
+        .animation(.easeInOut(duration: 0.35), value: appStore.bootstrapPhase)
         .onChange(of: appState.hasCompletedOnboarding) { _, done in
             // "Record my first message" chose to jump straight into creating;
             // wait out the swap animation so the sheet presents cleanly.

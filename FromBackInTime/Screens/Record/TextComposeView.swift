@@ -22,6 +22,7 @@ struct TextComposeView: View {
     @State private var isSaving = false
     @State private var saveError: String?
     @State private var showSignIn = false
+    @State private var sealed = false
     @FocusState private var focused: Bool
 
     private var trimmed: String { body_.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -32,16 +33,21 @@ struct TextComposeView: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.md) {
-            header
+            ComposerTopBar(recipientName: recipient.name, occasion: occasion, fallback: "Written message") {
+                dismiss()
+            }
             editor
+            footerRow
             saveButton
         }
         .padding(AppShellTheme.screenPadding)
         .padding(.bottom, AppSpacing.lg)
         .background(AppBackground())
-        .navigationTitle("Written message")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear { focused = true }
+        .scheduledCover(sealed, recipientName: recipient.name, medium: .text, kind: kind,
+                        deliveryDate: deliveryDate.map(MockAppStore.effectiveDelivery))
         .saveGating(
             showSignIn: $showSignIn,
             error: $saveError,
@@ -50,17 +56,12 @@ struct TextComposeView: View {
         )
     }
 
-    private var header: some View {
+    private var footerRow: some View {
         HStack(spacing: AppSpacing.sm) {
-            RecipientAvatar(recipient: recipient, size: 32)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("To \(recipient.name)")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppShellTheme.title)
-                Text(occasion.isEmpty ? "Message" : occasion)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(AppShellTheme.subtitle)
-            }
+            RecipientAvatar(recipient: recipient, size: 26)
+            Text("To \(recipient.name)")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppShellTheme.subtitle)
             Spacer()
             Text("\(wordCount) word\(wordCount == 1 ? "" : "s")")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -134,7 +135,7 @@ struct TextComposeView: View {
             isSaving = false
             if ok {
                 Haptics.notification(type: .success)
-                dismiss()
+                sealed = true
             } else {
                 Haptics.notification(type: .error)
                 saveError = store.error ?? "Something went wrong. Please try again."

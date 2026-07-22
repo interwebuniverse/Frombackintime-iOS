@@ -38,10 +38,7 @@ struct EditMessageView: View {
     }
 
     private var deliveryHint: String {
-        let f = RelativeDateTimeFormatter()
-        f.unitsStyle = .full
-        let relative = f.localizedString(for: deliveryDate, relativeTo: .now)
-        return "Arrives \(relative): \(DateFormatter.prettyDateTime.string(from: deliveryDate)), your local time."
+        "Arrives \(deliveryDate.friendlyArrival): \(DateFormatter.prettyDateTime.string(from: deliveryDate)), your local time."
     }
 
     private var canSave: Bool {
@@ -50,6 +47,8 @@ struct EditMessageView: View {
 
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+            AppSheetHeader(title: "Edit message", trailing: .close { dismiss() })
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
                     section(title: "To whom?") { recipientPicker }
@@ -92,16 +91,10 @@ struct EditMessageView: View {
                 .padding(AppShellTheme.screenPadding)
                 .padding(.bottom, AppSpacing.xxxl)
             }
-            .background(AppBackground())
             .scrollContentBackground(.hidden)
-            .navigationTitle("Edit message")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(AppShellTheme.accent)
-                }
             }
+            .background(AppBackground())
+            .toolbar(.hidden, for: .navigationBar)
             .alert("Couldn't save", isPresented: Binding(
                 get: { saveError != nil },
                 set: { if !$0 { saveError = nil } }

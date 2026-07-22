@@ -24,6 +24,17 @@ final class MockAppStore {
     /// The very first load, before any data has arrived: show a spinner, not an
     /// empty state that would wrongly read as "you have nothing".
     var isInitialLoading: Bool { isLoading && !hasLoaded }
+
+    /// Cold-launch lifecycle for the branded launch screen: the app stays on
+    /// LaunchView until the first full load lands (or fails, with a retry).
+    enum BootstrapPhase: Equatable {
+        case idle, loading, ready
+        case failed(String)
+    }
+    var bootstrapPhase: BootstrapPhase = .idle
+    /// Whether the most recent load() ended in a thrown error. Session errors
+    /// don't surface in `error`, so this is the reliable failure signal.
+    @ObservationIgnored private var lastLoadFailed = false
     /// The access code returned once when a CTM is armed. The owner shares it
     /// with the recipient out of band; surfaced once, never retrievable again.
     var lastAccessCode: String?
@@ -67,8 +78,17 @@ final class MockAppStore {
 
     /// Load everything from the backend. No-op in mock (seed already in place).
     func bootstrap() async {
-        guard !isMock else { return }
+        guard !isMock else {
+            bootstrapPhase = .ready
+            return
+        }
+        bootstrapPhase = .loading
         await load()
+        if lastLoadFailed {
+            bootstrapPhase = .failed(error ?? "We couldn't reach your vault. Check your connection and try again.")
+        } else {
+            bootstrapPhase = .ready
+        }
     }
 
     func load() async {
@@ -82,7 +102,9 @@ final class MockAppStore {
             let (r, m) = try await (recips, msgs)
             recipients = r.map(Recipient.init(dto:))
             messages = m.map(Message.init(dto:))
+            lastLoadFailed = false
         } catch {
+            lastLoadFailed = true
             setError(error)
         }
     }

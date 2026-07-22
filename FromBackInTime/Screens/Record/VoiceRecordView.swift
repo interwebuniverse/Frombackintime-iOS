@@ -30,6 +30,7 @@ struct VoiceRecordView: View {
     @State private var saveError: String?
     @State private var showSignIn = false
     @State private var deniedPermission: MediaPermission.Kind?
+    @State private var sealed = false
 
     enum RecState { case idle, recording, recorded }
 
@@ -62,6 +63,8 @@ struct VoiceRecordView: View {
         }
         .permissionAlert($deniedPermission)
         .savingOverlay(isSaving, message: "Sealing your voice note\u{2026}", detail: "Just a moment.")
+        .scheduledCover(sealed, recipientName: recipient.name, medium: .voice, kind: kind,
+                        deliveryDate: deliveryDate.map(MockAppStore.effectiveDelivery))
         .saveGating(
             showSignIn: $showSignIn,
             error: $saveError,
@@ -91,29 +94,9 @@ struct VoiceRecordView: View {
     // MARK: - Top bar
 
     private var topBar: some View {
-        HStack {
-            Button {
-                ticker?.invalidate()
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(12)
-                    .background(Circle().fill(.white.opacity(0.15)))
-            }
-            .a11y("voice.close")
-            Spacer()
-            VStack(spacing: 2) {
-                Text(recipient.name)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text(occasion.isEmpty ? "Voice note" : occasion)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.75))
-            }
-            Spacer()
-            Color.clear.frame(width: 44, height: 44)
+        ComposerTopBar(recipientName: recipient.name, occasion: occasion, fallback: "Voice note", dark: true) {
+            ticker?.invalidate()
+            dismiss()
         }
     }
 
@@ -353,7 +336,7 @@ struct VoiceRecordView: View {
             isSaving = false
             if ok {
                 Haptics.notification(type: .success)
-                dismiss()
+                sealed = true
             } else {
                 Haptics.notification(type: .error)
                 saveError = store.error ?? "Something went wrong. Please try again."

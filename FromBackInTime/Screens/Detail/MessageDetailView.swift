@@ -39,7 +39,10 @@ struct MessageDetailView: View {
     private var tint: Color { Color(hue: current.medium.hue, saturation: 0.62, brightness: 0.7) }
 
     var body: some View {
-        ScrollView {
+        AppNavScrollView(
+            title: current.occasion,
+            leading: .back { dismiss() }
+        ) {
             VStack(spacing: AppSpacing.xl) {
                 hero
                 metadata
@@ -49,11 +52,6 @@ struct MessageDetailView: View {
             .padding(.top, AppSpacing.xs)
             .padding(.bottom, AppSpacing.xxxl)
         }
-        .background(AppBackground())
-        .scrollContentBackground(.hidden)
-        .navigationTitle(current.occasion)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.visible, for: .navigationBar)
         .task { await loadDetail() }
         .onDisappear { stopPlayback() }
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in

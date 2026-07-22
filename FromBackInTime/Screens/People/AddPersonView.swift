@@ -65,22 +65,30 @@ struct AddPersonView: View {
                         .foregroundStyle(AppShellTheme.subtitle)
                 }
             }
-            .navigationTitle(editing == nil ? "Add person" : "Edit person")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundStyle(AppShellTheme.subtitle)
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                AppSheetHeader(title: editing == nil ? "Add person" : "Edit person", trailing: .close { dismiss() })
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    Haptics.feedback(style: .medium)
+                    save()
+                } label: {
+                    Text(isSaving ? "Saving\u{2026}" : (editing == nil ? "Add this person" : "Save changes"))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.lg)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppRadius.lg)
+                                .fill(canSave ? AppShellTheme.accent : AppShellTheme.subtitle.opacity(0.4))
+                        )
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSaving ? "Saving\u{2026}" : (editing == nil ? "Add" : "Save")) {
-                        Haptics.feedback(style: .medium)
-                        save()
-                    }
-                    .disabled(!canSave)
-                    .foregroundStyle(canSave ? AppShellTheme.accent : AppShellTheme.subtitle.opacity(0.4))
-                    .a11y("person.save")
-                }
+                .buttonStyle(.plain)
+                .disabled(!canSave)
+                .padding(.horizontal, AppShellTheme.screenPadding)
+                .padding(.bottom, AppSpacing.sm)
+                .a11y("person.save")
             }
             .saveGating(
                 showSignIn: $showSignIn,

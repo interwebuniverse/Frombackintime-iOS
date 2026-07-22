@@ -26,6 +26,7 @@ struct PhotoComposeView: View {
     @State private var isSaving = false
     @State private var saveError: String?
     @State private var showSignIn = false
+    @State private var sealed = false
 
     private var canSave: Bool {
         imageData != nil && !note.trimmingCharacters(in: .whitespaces).isEmpty && !isSaving
@@ -34,6 +35,9 @@ struct PhotoComposeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
+                ComposerTopBar(recipientName: recipient.name, occasion: occasion, fallback: "Photo & note") {
+                    dismiss()
+                }
                 photoArea
                 noteEditor
                 saveButton
@@ -43,9 +47,11 @@ struct PhotoComposeView: View {
         }
         .background(AppBackground())
         .scrollContentBackground(.hidden)
-        .navigationTitle("Photo & note")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .savingOverlay(isSaving, message: "Sealing your photo\u{2026}", detail: "Just a moment.")
+        .scheduledCover(sealed, recipientName: recipient.name, medium: .photo, kind: kind,
+                        deliveryDate: deliveryDate.map(MockAppStore.effectiveDelivery))
         .saveGating(
             showSignIn: $showSignIn,
             error: $saveError,
@@ -164,7 +170,7 @@ struct PhotoComposeView: View {
             isSaving = false
             if ok {
                 Haptics.notification(type: .success)
-                dismiss()
+                sealed = true
             } else {
                 Haptics.notification(type: .error)
                 saveError = store.error ?? "Something went wrong. Please try again."
