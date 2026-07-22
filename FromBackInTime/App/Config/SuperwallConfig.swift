@@ -16,9 +16,9 @@
 import Foundation
 
 enum SuperwallConfig {
-    /// Publishable Superwall API key (starts with `pk_...`). Replace this with
-    /// the key from Superwall dashboard → Settings → Keys.
-    static let apiKey = "pk_REPLACE_WITH_YOUR_SUPERWALL_PUBLISHABLE_KEY"
+    /// Publishable Superwall API key (starts with `pk_...`, safe to ship).
+    /// FromBackInTime Superwall app (id 49338), platform iOS.
+    static let apiKey = "pk_JRVVkycDP7n7mJ_Be-J2B"
 
     /// The placement the hard paywall registers, fired at the end of onboarding
     /// and on every launch for a user who finished onboarding but isn't paying.

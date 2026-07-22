@@ -21,6 +21,6 @@ struct PaywallGateView: View {
             ProgressView()
                 .tint(AppShellTheme.accent)
         }
-        .task { paywall.presentGate() }
+        .task { paywall.requireAccess() }
     }
 }

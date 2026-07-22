@@ -20,26 +20,20 @@ struct RootView: View {
             if !appState.hasCompletedOnboarding {
                 OnboardingView()
                     .transition(.opacity)
-            } else if paywall.isResolving {
-                // Brief, cold-launch only: entitlement status still resolving.
-                // Show the sky rather than flashing the paywall over a paid user.
-                ZStack {
-                    AppBackground()
-                    ProgressView().tint(AppShellTheme.accent)
-                }
-                .transition(.opacity)
-            } else if paywall.isSubscribed {
+            } else if paywall.hasAccess {
                 MainTabView()
                     .transition(.opacity)
             } else {
-                // Hard gate: finished onboarding but not paying.
+                // Finished onboarding but no access yet. PaywallGateView calls
+                // register: an entitled user is unlocked immediately (this view
+                // is a brief backdrop), otherwise Superwall presents the hard
+                // paywall over it. Either way there's no way in without a sub.
                 PaywallGateView()
                     .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.35), value: appState.hasCompletedOnboarding)
-        .animation(.easeInOut(duration: 0.35), value: paywall.isSubscribed)
-        .animation(.easeInOut(duration: 0.35), value: paywall.isResolving)
+        .animation(.easeInOut(duration: 0.35), value: paywall.hasAccess)
         .onChange(of: appState.hasCompletedOnboarding) { _, done in
             // "Record my first message" chose to jump straight into creating;
             // wait out the swap animation so the sheet presents cleanly.

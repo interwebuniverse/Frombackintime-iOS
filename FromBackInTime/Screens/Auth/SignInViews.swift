@@ -27,6 +27,9 @@ struct SignInControls: View {
     @State private var appleNonce = SignInCrypto.randomURLSafe()
     @State private var isWorking = false
 
+    /// Flip to true once the Google OAuth consent screen is verified.
+    private let showGoogle = false
+
     var body: some View {
         VStack(spacing: AppSpacing.md) {
             if let error = authStore.state.error {
@@ -48,26 +51,32 @@ struct SignInControls: View {
             .shadow(color: .black.opacity(0.16), radius: 16, y: 8)
             .a11y("signin.apple")
 
-            Button {
-                signInWithGoogle()
-            } label: {
-                HStack(spacing: AppSpacing.sm + 2) {
-                    Image("ob-google-logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 22, height: 22)
-                    Text("Continue with Google")
-                        .font(.system(size: 19, weight: .medium))
+            // Google sign-in is hidden for launch: shipping it requires Google's
+            // OAuth consent-screen verification. The full flow (signInWithGoogle,
+            // GoogleAuthSession, backend PKCE) stays wired; re-add the button here
+            // once Google approves the app.
+            if showGoogle {
+                Button {
+                    signInWithGoogle()
+                } label: {
+                    HStack(spacing: AppSpacing.sm + 2) {
+                        Image("ob-google-logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
+                        Text("Continue with Google")
+                            .font(.system(size: 19, weight: .medium))
+                    }
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(Color.white, in: .capsule)
+                    .overlay(Capsule().strokeBorder(Color.black.opacity(0.12), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
                 }
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .frame(height: 58)
-                .background(Color.white, in: .capsule)
-                .overlay(Capsule().strokeBorder(Color.black.opacity(0.12), lineWidth: 1))
-                .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
+                .obBounce(scale: 0.98)
+                .a11y("signin.google")
             }
-            .obBounce(scale: 0.98)
-            .a11y("signin.google")
         }
         .opacity(isWorking ? 0.5 : 1)
         .disabled(isWorking)
