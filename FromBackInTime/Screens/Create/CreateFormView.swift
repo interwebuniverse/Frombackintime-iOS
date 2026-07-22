@@ -22,12 +22,13 @@ struct CreateFormView: View {
     @State private var goToComposer: Bool = false
     @State private var showAddPerson = false
 
-    /// Delivery can be any future moment, even later today. The 15-minute
-    /// buffer leaves room to record and upload before finalize re-checks that
-    /// the time hasn't already passed. The picked Date is an absolute instant,
-    /// so the ISO-8601 string the backend gets is timezone-correct as is.
+    /// Delivery can be any future moment, even a couple of minutes from now.
+    /// If the pick slips behind the clock while recording, the store bumps it
+    /// forward at save instead of failing. The picked Date is an absolute
+    /// instant, so the ISO-8601 string the backend gets is timezone-correct
+    /// as is.
     private var earliestDelivery: Date {
-        .now.addingTimeInterval(15 * 60)
+        .now.addingTimeInterval(2 * 60)
     }
 
     init(kind: MessageKind, medium: MessageMedium, prefilledRecipient: Recipient? = nil) {
@@ -75,6 +76,12 @@ struct CreateFormView: View {
                             DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: [.date, .hourAndMinute])
                                 .labelsHidden()
                                 .datePickerStyle(.graphical)
+                                // The graphical picker doesn't reliably keep the
+                                // time wheel inside the range; snap forward here.
+                                .onChange(of: deliveryDate) { _, picked in
+                                    let floor = earliestDelivery
+                                    if picked < floor { deliveryDate = floor }
+                                }
                                 .a11y("form.date")
                             Text("Your local time. We deliver on the minute.")
                                 .font(.system(size: 12, weight: .medium, design: .rounded))

@@ -210,7 +210,7 @@ final class MockAppStore {
                 occasion: message.occasion.isEmpty ? nil : message.occasion,
                 bodyText: message.bodyText.isEmpty ? nil : message.bodyText,
                 durationSeconds: message.durationSeconds,
-                deliverAt: message.deliveryDate.map(APIDate.string)
+                deliverAt: message.deliveryDate.map { APIDate.string(Self.effectiveDelivery($0)) }
             )
             guard let id = created.id else { throw NetworkError.badResponse }
 
@@ -241,6 +241,14 @@ final class MockAppStore {
         }
     }
 
+    /// The user picks a delivery moment before recording, so by the time save
+    /// runs it can already be seconds in the past and the backend would reject
+    /// it. A pick that slipped behind the clock means "as soon as possible":
+    /// send it one minute out instead of failing the save.
+    static func effectiveDelivery(_ date: Date) -> Date {
+        max(date, .now.addingTimeInterval(60))
+    }
+
     /// Edit a scheduled message's occasion, recipient, or delivery date. The
     /// media itself can't change; to replace it the user re-records.
     @discardableResult
@@ -257,7 +265,7 @@ final class MockAppStore {
                 id: id,
                 occasion: occasion.isEmpty ? nil : occasion,
                 recipientId: recipientId,
-                deliverAt: deliveryDate.map(APIDate.string)
+                deliverAt: deliveryDate.map { APIDate.string(Self.effectiveDelivery($0)) }
             )
             messages[idx] = Message(dto: dto)
             return true

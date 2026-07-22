@@ -32,10 +32,9 @@ struct EditMessageView: View {
         _deliveryDate = State(initialValue: message.deliveryDate ?? Calendar.current.date(byAdding: .month, value: 6, to: .now) ?? .now)
     }
 
-    /// Any future moment works; the buffer keeps "save" from racing a time
-    /// that passes while the sheet is open.
+    /// Any future moment works; a slipped pick is bumped forward at save.
     private var earliestDelivery: Date {
-        .now.addingTimeInterval(15 * 60)
+        .now.addingTimeInterval(2 * 60)
     }
 
     private var canSave: Bool {
@@ -63,6 +62,12 @@ struct EditMessageView: View {
                                 DatePicker("", selection: $deliveryDate, in: earliestDelivery..., displayedComponents: [.date, .hourAndMinute])
                                     .labelsHidden()
                                     .datePickerStyle(.graphical)
+                                    // The graphical picker doesn't reliably keep
+                                    // the time wheel inside the range; snap here.
+                                    .onChange(of: deliveryDate) { _, picked in
+                                        let floor = earliestDelivery
+                                        if picked < floor { deliveryDate = floor }
+                                    }
                                 Text("Your local time. We deliver on the minute.")
                                     .font(.system(size: 12, weight: .medium, design: .rounded))
                                     .foregroundStyle(AppShellTheme.subtitle)
