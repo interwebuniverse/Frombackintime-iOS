@@ -17,9 +17,14 @@ struct PaywallGateView: View {
         ZStack {
             AppBackground()
                 .ignoresSafeArea()
-            // A quiet placeholder in case the paywall takes a beat to load.
-            ProgressView()
-                .tint(AppShellTheme.accent)
+            // A calm branded backdrop while the paywall slides over. No
+            // spinner: the only spinner in the app lives on LaunchView.
+            Image("ob-app-icon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .shadow(color: AppShellTheme.accent.opacity(0.3), radius: 22, y: 10)
         }
         .task { paywall.requireAccess() }
     }

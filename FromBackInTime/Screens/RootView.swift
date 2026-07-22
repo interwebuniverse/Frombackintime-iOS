@@ -18,13 +18,15 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if !appState.hasCompletedOnboarding {
-                OnboardingView()
-                    .transition(.opacity)
-            } else if appStore.bootstrapPhase != .ready {
-                // Cold launch for a returning user: branded loading screen
-                // until the session + vault land (or fail, with retry inside).
+            if appStore.bootstrapPhase != .ready {
+                // The one launch surface. Every cold start opens here: logo,
+                // ring, retry + support on failure. Only when the session and
+                // vault have landed does it decide what comes next:
+                // onboarding, the paywall gate, or the app.
                 LaunchView()
+                    .transition(.opacity)
+            } else if !appState.hasCompletedOnboarding {
+                OnboardingView()
                     .transition(.opacity)
             } else if paywall.hasAccess {
                 MainTabView()
