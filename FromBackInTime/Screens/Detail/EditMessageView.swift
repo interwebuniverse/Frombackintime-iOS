@@ -37,6 +37,13 @@ struct EditMessageView: View {
         .now.addingTimeInterval(2 * 60)
     }
 
+    private var deliveryHint: String {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        let relative = f.localizedString(for: deliveryDate, relativeTo: .now)
+        return "Arrives \(relative): \(DateFormatter.prettyDateTime.string(from: deliveryDate)), your local time."
+    }
+
     private var canSave: Bool {
         !occasion.trimmingCharacters(in: .whitespaces).isEmpty && !recipientID.isEmpty && !isSaving
     }
@@ -68,9 +75,11 @@ struct EditMessageView: View {
                                         let floor = earliestDelivery
                                         if picked < floor { deliveryDate = floor }
                                     }
-                                Text("Your local time. We deliver on the minute.")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                    .foregroundStyle(AppShellTheme.subtitle)
+                                // Same guard as the create form: show the full
+                                // when so a default date can't slip through.
+                                Text(deliveryHint)
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(AppShellTheme.accent)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .padding(AppSpacing.md)

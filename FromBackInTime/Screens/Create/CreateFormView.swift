@@ -83,9 +83,12 @@ struct CreateFormView: View {
                                     if picked < floor { deliveryDate = floor }
                                 }
                                 .a11y("form.date")
-                            Text("Your local time. We deliver on the minute.")
-                                .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(AppShellTheme.subtitle)
+                            // Spell out the full when: the calendar defaults
+                            // months ahead, so someone tweaking only the time
+                            // must see the year they're actually scheduling.
+                            Text(deliveryHint)
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .foregroundStyle(AppShellTheme.accent)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(AppSpacing.md)
@@ -254,6 +257,13 @@ struct CreateFormView: View {
         .buttonStyle(.plain)
         .disabled(!canContinue)
         .a11y("form.continue")
+    }
+
+    private var deliveryHint: String {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        let relative = f.localizedString(for: deliveryDate, relativeTo: .now)
+        return "Arrives \(relative): \(DateFormatter.prettyDateTime.string(from: deliveryDate)), your local time."
     }
 
     private var continueTitle: String {
