@@ -31,106 +31,55 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                AppSheetHeader(title: "Settings", trailing: .close { dismiss() })
-                listContent
+            AppNavScrollView(
+                title: "Settings",
+                trailing: .close { dismiss() },
+                topInset: 10
+            ) {
+                VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                    sectionCard(title: "Account") {
+                        accountRow
+                    }
+
+                    sectionCard(title: "About") {
+                        linkRow(title: "Privacy Policy", systemImage: "lock.shield", url: "https://frombackintime.com/privacy")
+                            .a11y("settings.privacy")
+                        rowDivider
+                        linkRow(title: "Terms of Service", systemImage: "doc.text", url: "https://frombackintime.com/terms")
+                            .a11y("settings.terms")
+                        rowDivider
+                        linkRow(title: "Contact support", systemImage: "envelope", url: "mailto:support@frombackintime.com")
+                            .a11y("settings.support")
+                        rowDivider
+                        versionRow
+                    }
+
+                    if !isAnonymous {
+                        sectionCard(title: nil) {
+                            Button {
+                                performSignOut()
+                            } label: {
+                                dangerRow(title: "Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                            }
+                            .buttonStyle(.plain)
+                            .a11y("settings.signout")
+                            rowDivider
+                            Button {
+                                Haptics.feedback(style: .heavy)
+                                showDeleteConfirm = true
+                            } label: {
+                                dangerRow(title: isDeleting ? "Deleting\u{2026}" : "Delete account", systemImage: "trash")
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(isDeleting)
+                            .a11y("settings.delete")
+                        }
+                    }
+                }
+                .padding(.horizontal, AppShellTheme.screenPadding)
+                .padding(.bottom, AppSpacing.xxxl)
             }
-            .background(AppBackground())
-            .toolbar(.hidden, for: .navigationBar)
             .a11y("settings.screen")
-        }
-    }
-
-    private var listContent: some View {
-        List {
-                Section("Account") {
-                    if isAnonymous {
-                        Button {
-                            Haptics.selection()
-                            showSignIn = true
-                        } label: {
-                            HStack(spacing: AppSpacing.md) {
-                                Image(systemName: "person.crop.circle.badge.plus")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundStyle(AppShellTheme.accent)
-                                    .frame(width: 26)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Sign in")
-                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                        .foregroundStyle(AppShellTheme.title)
-                                    Text("Protect your vault so it outlives this phone.")
-                                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                                        .foregroundStyle(AppShellTheme.subtitle)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(AppShellTheme.subtitle)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        HStack(spacing: AppSpacing.md) {
-                            Image(systemName: "person.crop.circle")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(AppShellTheme.accent)
-                                .frame(width: 26)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(authStore.state.profileName ?? "Signed in")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(AppShellTheme.title)
-                                Text(authStore.state.email ?? "Your vault is tied to your account.")
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                    .foregroundStyle(AppShellTheme.subtitle)
-                            }
-                        }
-                    }
-                }
-
-                Section("About") {
-                    linkRow(title: "Privacy Policy", systemImage: "lock.shield", url: "https://frombackintime.com/privacy")
-                        .a11y("settings.privacy")
-                    linkRow(title: "Terms of Service", systemImage: "doc.text", url: "https://frombackintime.com/terms")
-                        .a11y("settings.terms")
-                    linkRow(title: "Contact support", systemImage: "envelope", url: "mailto:support@frombackintime.com")
-                        .a11y("settings.support")
-                    HStack(spacing: AppSpacing.md) {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(AppShellTheme.accent)
-                            .frame(width: 26)
-                        Text("Version")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundStyle(AppShellTheme.title)
-                        Spacer()
-                        Text(appVersion)
-                            .font(.system(size: 15, weight: .medium, design: .rounded))
-                            .foregroundStyle(AppShellTheme.subtitle)
-                    }
-                }
-
-                if !isAnonymous {
-                    Section {
-                        Button(role: .destructive) {
-                            performSignOut()
-                        } label: {
-                            Text("Sign out")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        }
-                        .a11y("settings.signout")
-                        Button(role: .destructive) {
-                            Haptics.feedback(style: .heavy)
-                            showDeleteConfirm = true
-                        } label: {
-                            Text(isDeleting ? "Deleting\u{2026}" : "Delete account")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        }
-                        .disabled(isDeleting)
-                        .a11y("settings.delete")
-                    }
-                }
-            }
-            .scrollContentBackground(.hidden)
             .sheet(isPresented: $showSignIn) {
                 SignInSheet(subtitle: "Sign in so your messages outlive this phone and no one else can ever claim them.")
             }
@@ -148,6 +97,119 @@ struct SettingsView: View {
             } message: {
                 Text(deleteError ?? "")
             }
+        }
+    }
+
+    // MARK: - Section pieces (white cards on the sky, List-free)
+
+    @ViewBuilder
+    private func sectionCard<C: View>(title: String?, @ViewBuilder content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            if let title {
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppShellTheme.subtitle)
+                    .textCase(.uppercase)
+                    .padding(.leading, AppSpacing.xs)
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                content()
+            }
+            .background(AppShellTheme.card, in: RoundedRectangle(cornerRadius: AppShellTheme.cardRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppShellTheme.cardRadius, style: .continuous)
+                    .strokeBorder(AppShellTheme.cardBorder, lineWidth: 1)
+            )
+            .shadow(color: AppShellTheme.cardShadow, radius: 14, y: 6)
+        }
+    }
+
+    private var rowDivider: some View {
+        Divider()
+            .overlay(AppShellTheme.cardBorder)
+            .padding(.leading, AppSpacing.lg + 26 + AppSpacing.md)
+    }
+
+    private var accountRow: some View {
+        Group {
+            if isAnonymous {
+                Button {
+                    Haptics.selection()
+                    showSignIn = true
+                } label: {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(AppShellTheme.accent)
+                            .frame(width: 26)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sign in")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundStyle(AppShellTheme.title)
+                            Text("Protect your vault so it outlives this phone.")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(AppShellTheme.subtitle)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(AppShellTheme.subtitle)
+                    }
+                    .padding(AppSpacing.lg)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            } else {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(AppShellTheme.accent)
+                        .frame(width: 26)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(authStore.state.profileName ?? "Signed in")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppShellTheme.title)
+                        Text(authStore.state.email ?? "Your vault is tied to your account.")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(AppShellTheme.subtitle)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(AppSpacing.lg)
+            }
+        }
+    }
+
+    private var versionRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppShellTheme.accent)
+                .frame(width: 26)
+            Text("Version")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(AppShellTheme.title)
+            Spacer()
+            Text(appVersion)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(AppShellTheme.subtitle)
+        }
+        .padding(AppSpacing.lg)
+    }
+
+    private func dangerRow(title: String, systemImage: String) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.appError)
+                .frame(width: 26)
+            Text(title)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.appError)
+            Spacer()
+        }
+        .padding(AppSpacing.lg)
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -167,6 +229,8 @@ struct SettingsView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(AppShellTheme.subtitle)
                 }
+                .padding(AppSpacing.lg)
+                .contentShape(Rectangle())
             }
         }
     }
