@@ -14,6 +14,7 @@ struct RootView: View {
     @Environment(MockAppStore.self) private var appStore
     @Environment(PaywallManager.self) private var paywall
     @State private var showFirstCreate = false
+    @State private var showFirstFinish = false
 
     var body: some View {
         Group {
@@ -41,17 +42,29 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.35), value: paywall.hasAccess)
         .animation(.easeInOut(duration: 0.35), value: appStore.bootstrapPhase)
         .onChange(of: appState.hasCompletedOnboarding) { _, done in
-            // "Record my first message" chose to jump straight into creating;
-            // wait out the swap animation so the sheet presents cleanly.
-            guard done, appState.pendingFirstCreate else { return }
-            appState.pendingFirstCreate = false
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(0.6))
-                showFirstCreate = true
+            guard done else { return }
+            // A first message recorded during onboarding is waiting: save it
+            // now that the paywall unlocked. Wait out the swap animation so
+            // the sheet presents cleanly.
+            if appState.pendingFirstMessage != nil {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.6))
+                    showFirstFinish = true
+                }
+            } else if appState.pendingFirstCreate {
+                appState.pendingFirstCreate = false
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.6))
+                    showFirstCreate = true
+                }
             }
         }
         .sheet(isPresented: $showFirstCreate) {
             CreateView()
+                .presentationCornerRadius(28)
+        }
+        .sheet(isPresented: $showFirstFinish) {
+            FirstMessageFinishView()
                 .presentationCornerRadius(28)
         }
         // A signed-in session that dropped fell back to anonymous: prompt the

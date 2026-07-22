@@ -19,6 +19,21 @@ final class AppState {
     /// onboarding; RootView opens the create sheet right after the swap.
     var pendingFirstCreate = false
 
+    /// A first message recorded during onboarding, waiting to be saved once
+    /// the paywall unlocks and (if needed) the user signs in. Held in memory
+    /// only: the video bytes are too large to persist and the flow completes
+    /// in one sitting.
+    struct FirstMessagePayload {
+        var recipientName: String
+        var recipientEmail: String
+        var occasion: String
+        var deliveryDate: Date
+        var videoData: Data
+        var contentType: String
+        var durationSeconds: Int
+    }
+    var pendingFirstMessage: FirstMessagePayload?
+
     init() {
         #if MOCK
         // The Mock scheme (automated suite + demos) starts past onboarding as a

@@ -50,9 +50,12 @@ final class PaywallManager {
     /// every call: entitled → `feature` runs now and unlocks; not entitled →
     /// the Gated paywall is presented and `feature` only runs after they pay. A
     /// dismissal without access re-presents it so there's no way in without a sub.
-    func requireAccess() {
+    /// `onAccess` runs inside the feature closure, right after access is granted;
+    /// onboarding uses it to finish itself only once the user is through the gate.
+    func requireAccess(onAccess: (() -> Void)? = nil) {
         #if MOCK
         hasAccess = true
+        onAccess?()
         return
         #else
         let handler = PaywallPresentationHandler()
@@ -61,13 +64,14 @@ final class PaywallManager {
             if case .declined = result, !self.hasAccess {
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(300))
-                    self.requireAccess()
+                    self.requireAccess(onAccess: onAccess)
                 }
             }
         }
         Superwall.shared.register(placement: SuperwallConfig.gatePlacement, handler: handler) { [weak self] in
             // Runs only when the user has access (already paying or just paid).
             self?.hasAccess = true
+            onAccess?()
         }
         #endif
     }
