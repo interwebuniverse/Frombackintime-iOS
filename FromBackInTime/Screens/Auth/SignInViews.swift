@@ -12,6 +12,55 @@
 import AuthenticationServices
 import SwiftUI
 
+// MARK: - Privacy footer
+
+/// The one-line "here is what happens to your data" note that sits under the
+/// sign-in buttons. Rendered by SignInControls, so it shows on both the
+/// onboarding auth gate and the in-app SignInSheet. Both links open in an
+/// in-app Safari sheet rather than kicking the user out to Safari mid-flow.
+struct PrivacyFooter: View {
+    /// Which legal page the Safari sheet is showing, nil when closed.
+    @State private var legalPage: LegalPage?
+
+    var body: some View {
+        VStack(spacing: 5) {
+            HStack(spacing: 5) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 10, weight: .bold))
+                Text("Encrypted and private. Only you can open your vault.")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+            }
+            .foregroundStyle(OnboardingTheme.title.opacity(0.55))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 6) {
+                Button("Privacy Policy") {
+                    Haptics.selection()
+                    legalPage = .privacy
+                }
+                .a11y("signin.privacy")
+
+                Text("\u{00B7}")
+                    .foregroundStyle(OnboardingTheme.title.opacity(0.35))
+
+                Button("Terms") {
+                    Haptics.selection()
+                    legalPage = .terms
+                }
+                .a11y("signin.terms")
+            }
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundStyle(OnboardingTheme.highlight)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .sheet(item: $legalPage) { page in
+            SafariView(url: page.url)
+                .ignoresSafeArea()
+        }
+    }
+}
+
 // MARK: - Apple + Google buttons
 
 struct SignInControls: View {
@@ -77,6 +126,9 @@ struct SignInControls: View {
                 .obBounce(scale: 0.98)
                 .a11y("signin.google")
             }
+
+            PrivacyFooter()
+                .padding(.top, AppSpacing.xs)
         }
         .opacity(isWorking ? 0.5 : 1)
         .disabled(isWorking)
